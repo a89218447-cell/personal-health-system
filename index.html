@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#176b57">
-<title>個人健康管理系統 V4</title>
+<title>個人健康管理系統 V10</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#18312b;background:#f4f7f5}
 *{box-sizing:border-box}body{margin:0;padding:16px;max-width:980px;margin:auto}
@@ -23,15 +23,28 @@ button.secondary{background:#e8f0ec;color:#185342}button.danger{background:#a735
 table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td{border-bottom:1px solid #e3ebe6;padding:9px 7px;text-align:center;white-space:nowrap}th{background:#f0f6f2;position:sticky;top:0}
 .tablewrap{overflow:auto}.pill{display:inline-block;background:#e8f2ec;border-radius:20px;padding:4px 9px;font-size:.82rem}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f0f6f2;border-radius:12px;padding:12px}.stat b{display:block;font-size:1.3rem}
-@media(max-width:540px){body{padding:10px}.checkgrid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){
+ body{padding:10px}.checkgrid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}
+ .tablewrap{overflow:visible;width:100%}
+ .tablewrap table,.tablewrap table[style]{width:100%;min-width:0!important;border-collapse:separate;border-spacing:0 8px;font-size:.9rem}
+ .tablewrap thead{display:none}
+ .tablewrap tbody,.tablewrap tr{display:block;width:100%}
+ .tablewrap tr{background:#fff;border:1px solid #dce7e1;border-radius:12px;padding:6px 10px;margin:0 0 10px;overflow:hidden}
+ .tablewrap td{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;width:100%;padding:8px 2px;white-space:normal;text-align:right;overflow-wrap:anywhere;word-break:break-word;border-bottom:1px solid #edf1ee}
+ .tablewrap td:last-child{border-bottom:0}
+ .tablewrap td::before{content:attr(data-label);font-weight:650;text-align:left;flex:0 0 42%;color:#38564b;overflow-wrap:anywhere}
+ .tablewrap td button{padding:7px 9px;font-size:.82rem}
+}
+.slot{flex:1;min-width:220px;border:1px solid #d5ddda;border-radius:12px;padding:12px;margin:4px 0}.slot h4{margin:4px 0 10px}.slot label{margin-top:8px}
 </style></head>
 <body>
 <header><h1>個人健康管理</h1><p>運動・血壓・服藥｜本機優先，資料保存在此瀏覽器</p></header>
 <div class="card">
 <h2>語音登記（停止說話後自動儲存）</h2>
-<p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；補登血壓或服藥時，請說出實際時段與時間（例如「早上七點半血壓 113/67，晚上八點吃藥了」），系統以語音說出的時間為準，不使用手機當下時間。</p>
+<p class="small">成功儲存並驗證後，語音輸入框會自動清空；未辨識或儲存失敗時會保留文字。</p>
+<p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；補登血壓及服藥時，請用完整中文說明時段、項目及數值，不要念斜線符號。每一筆血壓、心跳或服藥都必須在同一段語音說出時段及確切時間；例如：「上午七點半 收縮壓一百一十三 舒張壓六十七 心跳七十一。晚上七點 已經吃藥。」若沒有說出時間，該筆健康資料不會寫入，也不會用手機當下時間代替。</p>
 <label for="utterance">說一句話記錄健康狀況</label>
-<textarea id="utterance" placeholder="例如：高血壓113 低血壓67 心跳71 吃藥了；今天跑步20分鐘"></textarea>
+<textarea id="utterance" placeholder="例如：上午七點半 收縮壓113 舒張壓67 心跳71。下午兩點 吃藥了。今天跑步20分鐘"></textarea>
 <div class="row" style="margin-top:9px"><button class="secondary" id="clearText">清除文字</button></div>
 <p class="small" id="parseMsg" aria-live="polite"></p>
 </div>
@@ -57,37 +70,34 @@ table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td
 <div><label for="hang">吊單槓（分鐘／秒）</label><input id="hang" placeholder="例如 1分鐘30秒"></div>
 </div>
 <label for="kegel">凱格爾（次數／組數）</label><input id="kegel" placeholder="例如 2組，每組10次">
-<div class="row" style="margin-top:13px"><button class="secondary" id="reset">清空表單</button></div>
 <p class="small" id="saveMsg" aria-live="polite"></p>
 <div class="tablewrap"><table><thead><tr><th>日期</th><th>星期</th><th>早餐後</th><th>午餐後</th><th>晚餐後</th><th>伏地挺身</th><th>跑步</th><th>爬樓梯</th><th>深蹲</th><th>伸展</th><th>吊單槓</th><th>凱格爾</th><th>操作</th></tr></thead><tbody id="records"></tbody></table></div>
 </div>
 
 <div class="card">
 <h2>血壓與服藥管理</h2>
-<p class="small">血壓測量依實際測量時間分為上午、下午、晚上（05:00–11:59 上午；12:00–17:59 下午；18:00–04:59 晚上）；服藥紀錄一律分為上午與晚上，依實際輸入時間自動判定（00:00–17:59 上午；18:00–23:59 晚上）。每日總覽分別列出上午、下午的血壓、心跳及服藥狀態；沒有輸入的欄位保持空白。</p>
+<p class="small">血壓分上午、晚上、下午三個時段記錄；服藥分上午、晚上兩個時段記錄。各時段獨立儲存，修改其中一個時段不會覆蓋其他時段。語音輸入依照說出的時段寫入對應欄位。</p>
+<h3>血壓與心跳（三個時段）</h3>
 <div class="row">
-  <div><label>血壓輸入時段</label><input id="healthPeriod" readonly></div>
-  <div><label>測量時間</label><input id="healthNow" readonly></div>
+  <div class="slot"><h4>上午血壓</h4><label for="sys_morning">收縮壓（mmHg）</label><input id="sys_morning" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_morning">舒張壓（mmHg）</label><input id="dia_morning" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_morning">心跳（次／分）</label><input id="pulse_morning" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_morning" readonly></div>
+  <div class="slot"><h4>晚上血壓</h4><label for="sys_evening">收縮壓（mmHg）</label><input id="sys_evening" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_evening">舒張壓（mmHg）</label><input id="dia_evening" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_evening">心跳（次／分）</label><input id="pulse_evening" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_evening" readonly></div>
+  <div class="slot"><h4>下午血壓</h4><label for="sys_afternoon">收縮壓（mmHg）</label><input id="sys_afternoon" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_afternoon">舒張壓（mmHg）</label><input id="dia_afternoon" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_afternoon">心跳（次／分）</label><input id="pulse_afternoon" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_afternoon" readonly></div>
 </div>
+<h3>服藥紀錄（兩個時段）</h3>
 <div class="row">
-  <div><label for="sys">收縮壓（mmHg）</label><input id="sys" type="number" inputmode="numeric" placeholder="例如 113"></div>
-  <div><label for="dia">舒張壓（mmHg）</label><input id="dia" type="number" inputmode="numeric" placeholder="例如 67"></div>
-  <div><label for="pulse">心跳（次／分）</label><input id="pulse" type="number" inputmode="numeric" placeholder="例如 71"></div>
+  <div class="slot"><h4>上午服藥</h4><label for="med_morning">服藥狀態</label><select id="med_morning"><option value="">未輸入／未服用</option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_morning" readonly></div>
+  <div class="slot"><h4>晚上服藥</h4><label for="med_evening">服藥狀態</label><select id="med_evening"><option value="">未輸入／未服用</option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_evening" readonly></div>
 </div>
-<div class="row">
-  <div><label for="medStatus">服藥狀態（依輸入時段）</label><select id="medStatus"><option value="">未輸入＝未服用</option><option value="taken">已服用</option></select></div>
-  <div><label>服藥時間</label><input id="medTime" readonly placeholder="選擇已服用後自動記錄"></div>
-</div>
-<p class="small" id="healthMsg" aria-live="polite">輸入血壓、心跳或服藥狀態後，系統會自動儲存；開啟或切換日期時會自動載入該時段紀錄。</p>
+<p class="small" id="healthMsg" aria-live="polite">切換日期會載入該日全部時段；修改欄位後自動儲存。</p>
 <div class="tablewrap">
-<table style="min-width:760px"><thead><tr><th>日期</th><th>上午血壓</th><th>上午心跳</th><th>下午血壓</th><th>下午心跳</th><th>晚上血壓</th><th>晚上心跳</th><th>上午服藥狀態</th><th>晚上服藥狀態</th><th>操作</th></tr></thead><tbody id="healthRecords"></tbody></table>
+<table style="min-width:760px"><thead><tr><th>日期</th><th>上午血壓</th><th>上午心跳</th><th>晚上血壓</th><th>晚上心跳</th><th>下午血壓</th><th>下午心跳</th><th>上午服藥狀態</th><th>晚上服藥狀態</th><th>操作</th></tr></thead><tbody id="healthRecords"></tbody></table>
 </div>
 </div>
 
 <div class="card">
 <h2>紀錄與統計</h2>
 <div class="stats"><div class="stat"><span class="small">已記錄天數</span><b id="days">0</b></div></div>
-<div class="row" style="margin:12px 0"><button class="secondary" id="exportExercise">匯出運動 CSV</button><button class="secondary" id="exportBP">匯出血壓 CSV</button><button class="secondary" id="exportMed">匯出服藥 CSV</button><button class="secondary" id="backup">完整備份 JSON</button><label class="secondary" style="display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;cursor:pointer">匯入備份<input type="file" id="import" accept=".json,application/json" hidden></label></div>
+<div class="row" style="margin:12px 0"><button class="secondary" id="exportExercise">匯出運動 CSV</button><button class="secondary" id="exportBP">匯出血壓 CSV</button><button class="secondary" id="exportMed">匯出服藥 CSV</button><button class="secondary" id="backup">完整備份 JSON</button><button class="secondary" id="weeklyReport">產生最近七天週報</button><label class="secondary" style="display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;cursor:pointer">匯入備份<input type="file" id="import" accept=".json,application/json" hidden></label></div>
 
 <p class="small">運動、血壓與服藥資料儲存在目前瀏覽器的本機空間。清除瀏覽器資料、解除安裝或更換手機可能導致資料遺失，請定期匯出備份。</p>
 </div>
@@ -105,9 +115,8 @@ function setDate(v){$('date').value=v;$('weekday').value=v?`星期${dayName(v)}`
 function val(id){return $(id).type==='checkbox'?$(id).checked:$(id).value.trim()}
 function fill(r={}){fields.forEach(f=>{if($(f).type==='checkbox')$(f).checked=!!r[f];else $(f).value=r[f]||''})}
 function current(){let r={date:$('date').value};fields.forEach(f=>r[f]=val(f));return r}
-function reset(){fill();setDate(today());$('saveMsg').textContent=''}
 $('date').addEventListener('change',()=>{setDate($('date').value);fill(data[$('date').value]||{});fillHealth();});
-$('reset').onclick=reset;$('clearText').onclick=()=>$('utterance').value='';
+$('clearText').onclick=()=>$('utterance').value='';
 let exerciseAutoSaveTimer=null;
 function saveExerciseAutomatically(){
  const r=current();
@@ -191,12 +200,31 @@ function addSameDayValue(oldValue,newValue,id){
 
 
 function parseSpeech(s){
+  s=String(s||'').replace(/[，,、]/g,' ').replace(/\s+/g,' ').trim();
   const r=data[$('date').value]||current();
   r.date=$('date').value||today();
   const found=[];
-  const numberWords={'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'二十':20,'三十':30};
-  const num='(\\d+|二十|三十|十|兩|[一二三四五六七八九])';
-  const getNum=x=>/^\d+$/.test(x)?x:String(numberWords[x]||'');
+  const numberWords={'零':0,'〇':0,'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  function zhNum(v){
+    if(/^\d+$/.test(v))return Number(v);
+    if(!v)return NaN;
+    if(v==='十')return 10;
+    if(v==='廿')return 20;
+    if(v.includes('百')){
+      const a=v.split('百'), h=a[0]?numberWords[a[0]]:1, tail=a[1]||'';
+      if(h===undefined)return NaN;
+      return h*100+(tail?zhNum(tail):0);
+    }
+    if(v.startsWith('廿'))return 20+(v.length>1?(numberWords[v.slice(1)]??NaN):0);
+    if(v.includes('十')){
+      const a=v.split('十'), tens=a[0]?numberWords[a[0]]:1, ones=a[1]?numberWords[a[1]]:0;
+      if(tens===undefined||ones===undefined)return NaN;
+      return tens*10+ones;
+    }
+    return numberWords[v]??NaN;
+  }
+  const num='(\\d+|[零〇一二兩三四五六七八九十廿百]+)';
+  const getNum=x=>String(zhNum(x));
   const checks=[
     ['breakfast',/早餐後.{0,10}(有運動|運動|走路|散步)/,/早餐後.{0,10}(沒運動|沒有運動|未運動)/],
     ['lunch',/(午餐|中餐)後.{0,10}(有運動|運動|走路|散步)/,/(午餐|中餐)後.{0,10}(沒運動|沒有運動|未運動)/],
@@ -229,59 +257,76 @@ function parseSpeech(s){
     }
   });
 
-
-  // 血壓語音支援「高血壓113 低血壓67」及「晚上血壓113/67」等說法
-  const highBp=s.match(/(?:高血壓|收縮壓)\s*(\d{2,3})/);
-  const lowBp=s.match(/(?:低血壓|舒張壓)\s*(\d{2,3})/);
-  const slashBp=s.match(/(?:血壓)?\s*(\d{2,3})\s*[／/]\s*(\d{2,3})/);
-  const plainBp=s.match(/血壓\s*(\d{2,3})[\s、，,]+(\d{2,3})/);
-  const bp=(highBp&&lowBp)?[null,highBp[1],lowBp[1]]:slashBp?[null,slashBp[1],slashBp[2]]:plainBp?[null,plainBp[1],plainBp[2]]:null;
-  const hr=s.match(/心跳\s*(\d{2,3})/);
-  const medTaken=/吃藥了|服藥了|已服藥/.test(s);
-  // 語音補登以使用者說出的實際時間為準，絕不以手機當下時間代替
+  // 健康資料逐段解析：每一段都必須同時說出時段與實際時間，絕不借用手機當下時間。
+  const markerRe=/(凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)/g;
+  const markers=[...s.matchAll(markerRe)];
+  const segments=markers.map((m,i)=>({
+    marker:m[0],
+    text:s.slice(m.index, i+1<markers.length?markers[i+1].index:s.length)
+  }));
+  function markerPeriod(m){
+    if(/凌晨|早上|早晨|上午/.test(m))return 'morning';
+    if(/中午|下午/.test(m))return 'afternoon';
+    return 'evening';
+  }
   function spokenClock(text){
-    let m=text.match(/(?:凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2})\s*[:：]\s*(\d{2})/);
-    if(m){let hh=Number(m[1]),mm=Number(m[2]);if(hh<=23&&mm<=59)return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
-    m=text.match(/(凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2})\s*點(?:\s*(半|\d{1,2}\s*分?))?/);
+    let m=text.match(/(?:凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2}|[零〇一二兩三四五六七八九十廿]+)\s*[:：]\s*(\d{2})/);
+    if(m){
+      let hh=zhNum(m[1]), mm=Number(m[2]);
+      if(hh>=0&&hh<=23&&mm>=0&&mm<=59)return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+    }
+    m=text.match(/(?:凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2}|[零〇一二兩三四五六七八九十廿]+)\s*點(?:\s*(半|(\d{1,2}|[零〇一二兩三四五六七八九十廿]+)\s*分?)?)?/);
     if(!m)return '';
-    let h=Number(m[2]), minute=m[3]==='半'?30:(m[3]?Number(m[3].replace(/\D/g,'')):0);
-    const period=m[1]||'';
-    if(h>23||minute>59)return '';
-    if(/晚上|夜間|夜晚/.test(period)&&h<12)h+=12;
-    else if(/下午/.test(period)&&h<12)h+=12;
-    else if(/中午/.test(period)&&h<11)h+=12;
-    else if(/凌晨/.test(period)&&h===12)h=0;
-    else if(/早上|早晨|上午/.test(period)&&h===12)h=0;
+    let h=zhNum(m[1]), minute=m[3]?zhNum(m[3]):(m[2]==='半'?30:0);
+    if(!Number.isFinite(h)||!Number.isFinite(minute)||h>23||minute>59)return '';
+    const marker=(text.match(/凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚/)||[])[0]||'';
+    if(/晚上|夜間|夜晚|下午/.test(marker)&&h<12)h+=12;
+    else if(/中午/.test(marker)&&h<11)h+=12;
+    else if(/凌晨/.test(marker)&&h===12)h=0;
+    else if(/早上|早晨|上午/.test(marker)&&h===12)h=0;
     return String(h).padStart(2,'0')+':'+String(minute).padStart(2,'0');
   }
-  const spokenTime=spokenClock(s);
-  const explicitPeriod=/上午|早上|早晨|凌晨/.test(s)?'morning':/下午|中午/.test(s)?'afternoon':/晚上|夜間|夜晚/.test(s)?'evening':'';
-  const timeHour=spokenTime?Number(spokenTime.slice(0,2)):null;
-  const inferredPeriod=explicitPeriod||(timeHour!==null?(timeHour<5||timeHour>=18?'evening':timeHour<12?'morning':'afternoon'):'');
-  if(bp||hr||medTaken){
-    if(!inferredPeriod){found.push('血壓／心跳／服藥未記錄：請在語音中說明早上、下午或晚上，並說出實際時間');}
-    else{
-      r.health=r.health||{};
-      const h=r.health[inferredPeriod]||{};
-      if(bp){h.sys=Number(bp[1]);h.dia=Number(bp[2]);h.measureTime=spokenTime||'';found.push(periodLabel(inferredPeriod)+'血壓');}
-      if(hr){h.pulse=Number(hr[1]);if(spokenTime)h.measureTime=spokenTime;found.push('心跳');}
-      if(bp||hr)r.health[inferredPeriod]=h;
-      if(medTaken){
-        const medPeriod=inferredPeriod==='afternoon'?'morning':inferredPeriod;
-        const mh=r.health[medPeriod]||{};
-        mh.medStatus='taken';mh.medTime=spokenTime||'';r.health[medPeriod]=mh;
-        found.push(medPeriod==='morning'?'上午服藥':'晚上服藥');
+  let healthWritten=false;
+  segments.forEach(seg=>{
+    const period=markerPeriod(seg.marker);
+    const time=spokenClock(seg.text);
+    const high=seg.text.match(new RegExp('(?:高血壓|收縮壓|高壓)\\s*'+num));
+    const low=seg.text.match(new RegExp('(?:低血壓|舒張壓|低壓)\\s*'+num));
+    const pulse=seg.text.match(new RegExp('心跳\\s*'+num));
+    const bp=high&&low;
+    if((high&&!low)||(!high&&low))found.push(periodLabel(period)+'血壓未寫入：收縮壓與舒張壓必須一起說明');
+    const med=/吃藥了|服藥了|已服藥|已經吃藥/.test(seg.text);
+    if(!bp&&!pulse&&!med)return;
+    if(!time){
+      found.push(periodLabel(period)+'健康紀錄未寫入：請在同一段語音說出確切時間，例如上午七點半或晚上八點');
+      return;
+    }
+    r.health=r.health||{};
+    if(bp||pulse){
+      const h=r.health[period]||{};
+      if(bp){h.sys=zhNum(high[1]);h.dia=zhNum(low[1]);h.measureTime=time;found.push(periodLabel(period)+'血壓');}
+      if(pulse){h.pulse=zhNum(pulse[1]);h.measureTime=time;if(!bp)found.push(periodLabel(period)+'心跳');}
+      r.health[period]=h;healthWritten=true;
+    }
+    if(med){
+      if(period==='afternoon'){
+        found.push('下午不是服藥時段：服藥請明確說上午或晚上及時間');
+      }else{
+        const h=r.health[period]||{};
+        h.medStatus='taken';h.medTime=time;r.health[period]=h;
+        found.push(periodLabel(period)+'服藥');healthWritten=true;
       }
     }
-  }
+  });
   return {r,found};
 }
 function autoSaveSpeech(){
   const s=$('utterance').value.trim();
   if(!s)return;
   const {r,found}=parseSpeech(s);
-  if(!found.length){
-    $('parseMsg').textContent='尚未辨識到明確項目，沒有寫入；可說「跑步20分鐘」。';
+  const validFound=found.filter(x=>!x.includes('未寫入')&&!x.includes('不是服藥時段'));
+  if(!validFound.length){
+    $('parseMsg').textContent=found.length?found.join('；')+'。請補上完整時段與時間後再輸入，這次沒有儲存。':'尚未辨識到明確項目，沒有寫入；可說「跑步20分鐘」。';
     return;
   }
   try{
@@ -290,8 +335,9 @@ function autoSaveSpeech(){
     const check=JSON.parse(localStorage.getItem(KEY)||'{}');
     if(!check[r.date] || fields.some(f=>String(check[r.date][f]??'')!==String(r[f]??''))) throw new Error('儲存驗證不一致');
     setDate(r.date);fill(r);render();renderHealth();fillHealth();
-    $('parseMsg').textContent='本機自動儲存成功：'+found.join('、');
+    $('parseMsg').textContent='本機自動儲存成功：'+validFound.join('、')+(found.length>validFound.length?'；另有未完整項目未寫入':'')+'；輸入文字已清空。';
     $('saveMsg').textContent='已寫入並驗證手機此瀏覽器的本機儲存空間。';
+    $('utterance').value='';
   }catch(e){
     $('parseMsg').textContent='本機儲存失敗：此開啟方式可能不支援持續保存。請勿關閉頁面，先截圖回報。';
     $('saveMsg').textContent='儲存失敗：'+(e.message||'瀏覽器未允許本機儲存');
@@ -327,93 +373,67 @@ function healthFor(date,period){
  r.health[period]=r.health[period]||{};
  return r.health[period];
 }
-function refreshHealthClock(){
- const p=currentPeriod();
- const label=periodLabel(p);
- $('healthNow').value=localClock();
- $('healthPeriod').value=label;
- const takenOption=$('medStatus').querySelector('option[value="taken"]');
- if(takenOption) takenOption.textContent=label+'已服用';
-}
-let editingHealth = null;
-let healthAutoSaveTimer = null;
+const bpPeriods=['morning','afternoon','evening'];
+const medPeriods=['morning','evening'];
+let healthAutoSaveTimer=null;
 function fillHealth(){
  const date=$('date').value||today();
- const p=currentPeriod();
- const h=healthFor(date,p);
- editingHealth=null;
- $('sys').value=h.sys??''; $('dia').value=h.dia??''; $('pulse').value=h.pulse??'';
- $('medStatus').value=h.medStatus??'';
- $('medTime').value=h.medTime??'';
- refreshHealthClock();
+ const health=data[date]?.health||{};
+ [...bpPeriods,...medPeriods].forEach(p=>{
+   const h=health[p]||{};
+   if(bpPeriods.includes(p)){
+     $('sys_'+p).value=h.sys??''; $('dia_'+p).value=h.dia??''; $('pulse_'+p).value=h.pulse??'';
+     $('time_'+p).value=h.measureTime||'';
+   }
+   if(medPeriods.includes(p)){
+     $('med_'+p).value=h.medStatus??''; $('medtime_'+p).value=h.medTime??'';
+   }
+ });
+ $('healthMsg').textContent=`目前顯示 ${date} 的三個血壓時段及兩個服藥時段。`;
 }
-function loadHealthSlot(date, period){
- const h=(data[date]?.health||{})[period]||{};
- $('date').value=date;
- editingHealth={date,period};
- $('sys').value=h.sys??''; $('dia').value=h.dia??''; $('pulse').value=h.pulse??'';
- $('medStatus').value=h.medStatus??''; $('medTime').value=h.medTime??'';
- $('healthPeriod').value=periodLabel(period);
- $('healthNow').value=h.measureTime||h.medTime||localClock();
- $('healthMsg').textContent=`正在編輯 ${date} 的${periodLabel(period)}紀錄；修改後會自動儲存。`;
-}
-function saveHealthAutomatically(){
- const date=editingHealth?.date||$('date').value||today();
- const p=editingHealth?.period||currentPeriod();
- const sys=$('sys').value.trim(), dia=$('dia').value.trim(), pulse=$('pulse').value.trim();
- const medStatus=$('medStatus').value;
- if((sys||dia||pulse)&&!(sys&&dia&&pulse)){
-   $('healthMsg').textContent='血壓與心跳請完整輸入，系統暫不儲存不完整的血壓資料。';
-   return;
- }
- if(sys&&(+sys<=0||+dia<=0||+pulse<=0)){
-   $('healthMsg').textContent='請確認輸入數值大於 0，尚未儲存。';
-   return;
- }
- const hasAny=!!(sys&&dia&&pulse)||medStatus==='taken';
- data[date]=data[date]||{date};
- data[date].health=data[date].health||{};
- if(!hasAny){
-   if(data[date].health[p]) delete data[date].health[p];
-   if(!Object.keys(data[date].health).length) delete data[date].health;
-   if(!Object.keys(data[date]).some(k=>k!=='date'&&k!=='health')&&!data[date].health) delete data[date];
- }else{
-   const old=data[date].health[p]||{};
-   const now=localClock();
-   const h={...old};
-   if(sys){h.sys=Number(sys);h.dia=Number(dia);h.pulse=Number(pulse);h.measureTime=old.measureTime||now;}
+function saveHealthAutomatically(period){
+ const date=$('date').value||today();
+ const old=data[date]?.health?.[period]||{};
+ const h={...old};
+ if(bpPeriods.includes(period)){
+   const sys=$('sys_'+period).value.trim(),dia=$('dia_'+period).value.trim(),pulse=$('pulse_'+period).value.trim();
+   if((sys||dia||pulse)&&!(sys&&dia&&pulse)){$('healthMsg').textContent=periodLabel(period)+'血壓請完整輸入收縮壓、舒張壓及心跳，尚未儲存。';return;}
+   if(sys&&(+sys<=0||+dia<=0||+pulse<=0)){$('healthMsg').textContent='請確認血壓及心跳數值大於 0，尚未儲存。';return;}
+   if(sys){h.sys=Number(sys);h.dia=Number(dia);h.pulse=Number(pulse);h.measureTime=h.measureTime||'';}
    else {delete h.sys;delete h.dia;delete h.pulse;delete h.measureTime;}
-   h.medStatus=medStatus;
-   if(medStatus==='taken') h.medTime=old.medStatus==='taken'&&old.medTime?old.medTime:now;
-   else delete h.medTime;
-   data[date].health[p]=h;
  }
+ if(medPeriods.includes(period)){
+   const status=$('med_'+period).value;
+   if(status==='taken'){h.medStatus='taken';h.medTime=h.medTime||'';}
+   else {delete h.medStatus;delete h.medTime;}
+ }
+ const hasBp=!!(h.sys&&h.dia&&h.pulse),hasMed=h.medStatus==='taken';
+ data[date]=data[date]||{date};data[date].health=data[date].health||{};
+ if(hasBp||hasMed)data[date].health[period]=h;
+ else delete data[date].health[period];
+ if(!Object.keys(data[date].health).length)delete data[date].health;
  try{
    localStorage.setItem(KEY,JSON.stringify(data));
-   const chk=JSON.parse(localStorage.getItem(KEY)||'{}');
-   if(hasAny&&!chk[date]?.health?.[p]) throw Error('讀回驗證失敗');
-   render();renderHealth();
-   $('healthMsg').textContent='已自動儲存並驗證本機紀錄。';
+   const check=JSON.parse(localStorage.getItem(KEY)||'{}');
+   if((hasBp||hasMed)&&!check[date]?.health?.[period])throw Error('讀回驗證失敗');
+   if(bpPeriods.includes(period))$('time_'+period).value=h.measureTime||'';
+   if(medPeriods.includes(period))$('medtime_'+period).value=h.medTime||'';
+   render();renderHealth();$('healthMsg').textContent=periodLabel(period)+'資料已自動儲存並驗證。';
  }catch(e){$('healthMsg').textContent='本機自動儲存失敗：'+e.message;}
 }
-function scheduleHealthAutoSave(){
- clearTimeout(healthAutoSaveTimer);
- healthAutoSaveTimer=setTimeout(saveHealthAutomatically,700);
+function scheduleHealthAutoSave(period){clearTimeout(healthAutoSaveTimer);healthAutoSaveTimer=setTimeout(()=>saveHealthAutomatically(period),700);}
+bpPeriods.forEach(p=>['sys','dia','pulse'].forEach(k=>$(''+k+'_'+p).addEventListener('input',()=>scheduleHealthAutoSave(p))));
+medPeriods.forEach(p=>$('med_'+p).addEventListener('change',()=>{
+ const date=$('date').value||today(),h=data[date]?.health?.[p]||{};
+ if($('med_'+p).value==='taken'&&!h.medTime)$('medtime_'+p).value=localClock();
+ if($('med_'+p).value!=='taken')$('medtime_'+p).value='';
+ scheduleHealthAutoSave(p);
+}));
+function loadHealthSlot(date,period){
+ $('date').value=date;setDate(date);fillHealth();
+ $('healthMsg').textContent=`已載入 ${date} 的所有時段；請直接修改對應欄位。`;
 }
-['sys','dia','pulse'].forEach(id=>$(id).addEventListener('input',scheduleHealthAutoSave));
-$('medStatus').addEventListener('change',()=>{
- if($('medStatus').value==='taken'&&!$('medTime').value) $('medTime').value=localClock();
- if($('medStatus').value!=='taken') $('medTime').value='';
- scheduleHealthAutoSave();
-});
-function editHealthRecord(date){
- const health=data[date]?.health||{};
- const periods=['evening','afternoon','morning'];
- const period=periods.find(p=>health[p]&&(health[p].sys||health[p].medStatus==='taken'))||periods.find(p=>health[p]);
- if(!period){$('healthMsg').textContent='這一天沒有可編輯的血壓或服藥紀錄。';return;}
- loadHealthSlot(date,period);
- document.querySelector('#healthPeriod').scrollIntoView({behavior:'smooth',block:'center'});
-}
+function editHealthRecord(date){loadHealthSlot(date,'morning');document.querySelector('#healthMsg').scrollIntoView({behavior:'smooth',block:'center'});}
 function deleteHealthRecord(date){
  if(!confirm(`確定刪除 ${date} 的所有血壓與服藥紀錄？`)) return;
  if(data[date]){delete data[date].health;if(!Object.keys(data[date]).some(k=>k!=='date')) delete data[date];}
@@ -429,37 +449,34 @@ function renderHealth(){
     const hour=Number(clock.split(':')[0]);
     return hour>=5&&hour<12?'morning':hour>=12&&hour<18?'afternoon':'evening';
   };
-  const medPeriodFromTime=(clock,fallback)=>{
-    if(!clock || !/^\d{1,2}:\d{2}$/.test(clock)) return fallback==='afternoon'?'evening':fallback;
-    return Number(clock.split(':')[0])<18?'morning':'evening';
-  };
-  Object.keys(data).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
+  const medPeriodFromBucket=bucket=>bucket;
+  Object.keys(data).filter(date=>date===today()).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
     const health=data[date]?.health;
     if(!health) return;
-    const slots={morning:{},afternoon:{},evening:{}}, meds={morning:{},evening:{}};
+    const slots={morning:{},afternoon:{},evening:{}}, meds={morning:{},afternoon:{},evening:{}};
     Object.keys(health).forEach(bucket=>{
       const h=health[bucket]||{};
       if(h.sys||h.dia||h.pulse!==undefined&&h.pulse!==''){
-        const p=bloodPeriodFromTime(h.measureTime,bucket);
+        const p=bucket;
         if(slots[p]) Object.assign(slots[p],{sys:h.sys,dia:h.dia,pulse:h.pulse});
       }
       if(h.medStatus==='taken'){
-        const p=medPeriodFromTime(h.medTime,bucket);
-        meds[p]={medStatus:'taken',medTime:h.medTime||''};
+        const p=medPeriodFromBucket(bucket);
+        if(meds[p]) meds[p]={medStatus:'taken',medTime:h.medTime||''};
       }
     });
     const bpText=h=>h.sys&&h.dia?esc(h.sys+'/'+h.dia):'';
     const pulseText=h=>h.pulse!==undefined&&h.pulse!==null&&h.pulse!==''?esc(h.pulse):'';
-    const medText=(h,p)=>h.medStatus==='taken'?(p==='morning'?'上午已服用':'晚上已服用')+(h.medTime?'（'+esc(h.medTime)+'）':''):'';
+    const medText=(h,p)=>h.medStatus==='taken'?(periodLabel(p)+'已服用')+(h.medTime?'（'+esc(h.medTime)+'）':''):'';
     const m=slots.morning,a=slots.afternoon,e=slots.evening;
-    rows.push(`<tr><td>${esc(date)}</td><td>${bpText(m)}</td><td>${pulseText(m)}</td><td>${bpText(a)}</td><td>${pulseText(a)}</td><td>${bpText(e)}</td><td>${pulseText(e)}</td><td>${medText(meds.morning,'morning')}</td><td>${medText(meds.evening,'evening')}</td><td><button class="secondary" onclick="editHealthRecord('${date}')">編輯</button> <button class="danger" onclick="deleteHealthRecord('${date}')">刪除</button></td></tr>`);
+    rows.push(`<tr><td data-label="日期">${esc(date)}</td><td data-label="上午血壓">${bpText(m)}</td><td data-label="上午心跳">${pulseText(m)}</td><td data-label="晚上血壓">${bpText(e)}</td><td data-label="晚上心跳">${pulseText(e)}</td><td data-label="下午血壓">${bpText(a)}</td><td data-label="下午心跳">${pulseText(a)}</td><td data-label="上午服藥狀態">${medText(meds.morning,'morning')}</td><td data-label="晚上服藥狀態">${medText(meds.evening,'evening')}</td><td data-label="操作"><button class="secondary" onclick="editHealthRecord('${date}')">編輯</button> <button class="danger" onclick="deleteHealthRecord('${date}')">刪除</button></td></tr>`);
   });
   $('healthRecords').innerHTML=rows.join('');
 }
 
 function render(){
- let arr=Object.values(data).sort((a,b)=>b.date.localeCompare(a.date));
- $('records').innerHTML=arr.map(r=>`<tr><td>${esc(r.date)}</td><td>星期${dayName(r.date)}</td><td>${r.breakfast?'✓':''}</td><td>${r.lunch?'✓':''}</td><td>${r.dinner?'✓':''}</td><td>${esc(r.pushups)}</td><td>${esc(r.run)}</td><td>${esc(r.stairs)}</td><td>${esc(r.squat)}</td><td>${esc(r.stretch)}</td><td>${esc(r.hang)}</td><td>${esc(r.kegel)}</td><td><button class="secondary" onclick="editRow('${r.date}')">編輯</button> <button class="danger" onclick="deleteRow('${r.date}')">刪除</button></td></tr>`).join('');
+ let arr=Object.values(data).filter(r=>r.date===today()).sort((a,b)=>b.date.localeCompare(a.date));
+ $('records').innerHTML=arr.map(r=>`<tr><td data-label="日期">${esc(r.date)}</td><td data-label="星期">星期${dayName(r.date)}</td><td data-label="早餐後">${r.breakfast?'✓':''}</td><td data-label="午餐後">${r.lunch?'✓':''}</td><td data-label="晚餐後">${r.dinner?'✓':''}</td><td data-label="伏地挺身">${esc(r.pushups)}</td><td data-label="跑步">${esc(r.run)}</td><td data-label="爬樓梯">${esc(r.stairs)}</td><td data-label="深蹲">${esc(r.squat)}</td><td data-label="伸展">${esc(r.stretch)}</td><td data-label="吊單槓">${esc(r.hang)}</td><td data-label="凱格爾">${esc(r.kegel)}</td><td data-label="操作"><button class="secondary" onclick="editRow('${r.date}')">編輯</button> <button class="danger" onclick="deleteRow('${r.date}')">刪除</button></td></tr>`).join('');
  $('days').textContent=arr.length;
 }
 window.editRow=d=>{setDate(d);fill(data[d]);window.scrollTo({top:0,behavior:'smooth'})};
@@ -470,25 +487,17 @@ function csvDownload(filename,columns,rows){
  download(filename,csv,'text/csv;charset=utf-8');
 }
 function healthSlots(record){
- const slots={morning:{},afternoon:{},evening:{}},meds={morning:{},evening:{}};
+ const slots={morning:{},afternoon:{},evening:{}},meds={morning:{},afternoon:{},evening:{}};
  Object.entries(record.health||{}).forEach(([bucket,raw])=>{
    const h=raw||{};
    if(h.sys||h.dia||h.pulse!==undefined&&h.pulse!==''){
-     let period=bucket;
-     if(h.measureTime&&/^\d{1,2}:\d{2}$/.test(h.measureTime)){
-       const hour=Number(h.measureTime.split(':')[0]);
-       period=hour>=5&&hour<12?'morning':hour>=12&&hour<18?'afternoon':'evening';
-     }
-     if(slots[period]) slots[period]={...slots[period],...h};
+     if(slots[bucket]) slots[bucket]={...slots[bucket],...h};
    }
-   if(h.medStatus==='taken'){
-     let period=bucket==='afternoon'?'evening':bucket;
-     if(h.medTime&&/^\d{1,2}:\d{2}$/.test(h.medTime)) period=Number(h.medTime.split(':')[0])<18?'morning':'evening';
-     if(period==='morning'||period==='evening') meds[period]=h;
-   }
+   if(h.medStatus==='taken' && meds[bucket]) meds[bucket]=h;
  });
  return {slots,meds};
 }
+
 const sortedRecords=()=>Object.values(data).sort((a,b)=>a.date.localeCompare(b.date));
 const weekdayText=date=>{const [y,m,d]=String(date).split('-').map(Number);return '星期'+['日','一','二','三','四','五','六'][new Date(y,m-1,d).getDay()];};
 $('exportExercise').onclick=()=>{
@@ -587,24 +596,43 @@ refreshHealthClock();fillHealth();renderHealth();
 
 fillHealth();setInterval(refreshHealthClock,15000);
 
-// 每週日任一時間首次開啟系統時，自動匯出完整 JSON；同一週只執行一次
+// 最近七天週報：CSV（Excel可開啟）、可列印PDF報告頁、完整JSON備份
+function lastSevenDays(){
+ const end=new Date(); end.setHours(12,0,0,0);
+ const start=new Date(end); start.setDate(end.getDate()-6);
+ const dates=[]; for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)) dates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+ return {dates,start:dates[0],end:dates[dates.length-1]};
+}
+function weeklyReport(){
+ const {dates,start,end}=lastSevenDays();
+ const records=dates.filter(d=>data[d]).map(d=>data[d]);
+ const cols=['日期','星期','早餐後','午餐後','晚餐後','伏地挺身','跑步','爬樓梯（層）','深蹲','伸展','吊單槓','凱格爾','上午血壓','上午心跳','上午測量時間','下午血壓','下午心跳','下午測量時間','晚上血壓','晚上心跳','晚上測量時間','上午服藥','上午服藥時間','晚上服藥','晚上服藥時間'];
+ const rows=records.map(r=>{const {slots,meds}=healthSlots(r),bp=h=>h.sys&&h.dia?`${h.sys}/${h.dia}`:'';return [r.date,weekdayText(r.date),r.breakfast?'✓':'',r.lunch?'✓':'',r.dinner?'✓':'',r.pushups||'',r.run||'',r.stairs||'',r.squat||'',r.stretch||'',r.hang||'',r.kegel||'',bp(slots.morning),slots.morning.pulse||'',slots.morning.measureTime||'',bp(slots.afternoon),slots.afternoon.pulse||'',slots.afternoon.measureTime||'',bp(slots.evening),slots.evening.pulse||'',slots.evening.measureTime||'',meds.morning.medStatus==='taken'?'已服用':'',meds.morning.medTime||'',meds.evening.medStatus==='taken'?'已服用':'',meds.evening.medTime||''];});
+ csvDownload(`每週健康紀錄_${start}_至_${end}.csv`,cols,rows);
+ const json=JSON.stringify(Object.fromEntries(records.map(r=>[r.date,r])),null,2);
+ download(`每週健康紀錄_${start}_至_${end}.json`,json,'application/json');
+ const bpVals=[],pulseVals=[]; let exerciseDays=0,medCount=0;
+ records.forEach(r=>{
+  if(fields.some(f=>f==='breakfast'||f==='lunch'||f==='dinner'?!!r[f]:String(r[f]??'').trim()!=='')) exerciseDays++;
+  const {slots,meds}=healthSlots(r);
+  ['morning','afternoon','evening'].forEach(k=>{const h=slots[k];if(h.sys&&h.dia)bpVals.push({date:r.date,period:periodLabel(k),sys:Number(h.sys),dia:Number(h.dia)});if(h.pulse!==''&&h.pulse!=null)pulseVals.push(Number(h.pulse));});
+  ['morning','evening'].forEach(k=>{if(meds[k].medStatus==='taken')medCount++;});
+ });
+ const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):'無資料';
+ const escHtml=x=>esc(x);
+ const bodyRows=records.map(r=>{const {slots,meds}=healthSlots(r),bp=h=>h.sys&&h.dia?`${h.sys}/${h.dia}`:'—';return `<tr><td>${escHtml(r.date)} ${weekdayText(r.date)}</td><td>${bp(slots.morning)}</td><td>${bp(slots.afternoon)}</td><td>${bp(slots.evening)}</td><td>${slots.morning.pulse||'—'} / ${slots.afternoon.pulse||'—'} / ${slots.evening.pulse||'—'}</td><td>${meds.morning.medStatus==='taken'?'已服用':'—'} / ${meds.evening.medStatus==='taken'?'已服用':'—'}</td><td>${escHtml([r.pushups&&'伏地挺身 '+r.pushups,r.run&&'跑步 '+r.run,r.stairs&&'爬樓梯 '+r.stairs+'層',r.squat&&'深蹲 '+r.squat,r.stretch&&'伸展 '+r.stretch,r.hang&&'吊單槓 '+r.hang,r.kegel&&'凱格爾 '+r.kegel].filter(Boolean).join('、')||'—')}</td></tr>`;}).join('');
+ const report=`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>每週健康報告</title><style>body{font-family:system-ui,'Noto Sans TC',sans-serif;margin:24px;color:#18312b}h1{color:#176b57} .stats{display:flex;gap:12px;flex-wrap:wrap}.stats div{padding:12px;background:#eef5f0;border-radius:8px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{border:1px solid #ccd8d1;padding:7px;text-align:left}th{background:#eef5f0}.hint{color:#53665d}@media print{button{display:none}body{margin:10mm}table{font-size:10px}}</style><h1>每週健康報告</h1><p>統計期間：${start} 至 ${end}</p><div class="stats"><div>有紀錄天數：${records.length} 天</div><div>運動紀錄天數：${exerciseDays} 天</div><div>血壓測量：${bpVals.length} 次</div><div>平均收縮壓：${avg(bpVals.map(x=>x.sys))}</div><div>平均舒張壓：${avg(bpVals.map(x=>x.dia))}</div><div>平均心跳：${avg(pulseVals)}</div><div>服藥紀錄：${medCount} 次</div></div><h2>七日明細</h2><table><thead><tr><th>日期</th><th>上午血壓</th><th>下午血壓</th><th>晚上血壓</th><th>心跳（上午／下午／晚上）</th><th>服藥（上午／晚上）</th><th>運動</th></tr></thead><tbody>${bodyRows||'<tr><td colspan="7">本週尚無紀錄</td></tr>'}</tbody></table><p class="hint">本報告只整理統計期間內已儲存的資料，不會刪除手機內的任何歷史紀錄。平均值僅依有填寫的測量資料計算。</p><button onclick="window.print()">列印／另存為 PDF</button></html>`;
+ download(`每週健康報告_${start}_至_${end}.html`,report,'text/html;charset=utf-8');
+ $('saveMsg').textContent=`已產生 ${start} 至 ${end} 的週報：Excel可開啟的CSV、PDF列印報告頁及JSON備份。請在下載後開啟HTML報告，選擇列印或另存為PDF。`;
+}
+$('weeklyReport').onclick=weeklyReport;
+// 星期日首次開啟時自動產生本週報表；失敗時不標記完成，方便重試
 (function weeklySundayExport(){
- const now=new Date();
- if(now.getDay()!==0) return;
- const weekStart=new Date(now);
- weekStart.setHours(0,0,0,0);
- weekStart.setDate(now.getDate()-now.getDay());
- const weekKey='health_weekly_json_backup_'+weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0')+'-'+String(weekStart.getDate()).padStart(2,'0');
+ const now=new Date(); if(now.getDay()!==0) return;
+ const {start,end}=lastSevenDays();
+ const weekKey='health_weekly_report_'+start+'_'+end;
  if(localStorage.getItem(weekKey)==='done') return;
- // 週日第一次開啟網站時下載一份完整 JSON，涵蓋運動、血壓、心跳及服藥紀錄
- try{
-   $('backup').click();
-   localStorage.setItem(weekKey,'done');
-   const msg=$('saveMsg');
-   if(msg) msg.textContent='本週完整 JSON 備份已觸發下載。若瀏覽器詢問下載權限，請允許。';
- }catch(e){
-   const msg=$('saveMsg');
-   if(msg) msg.textContent='本週自動備份未完成，請手動點擊「完整備份 JSON」。';
- }
+ try{weeklyReport();localStorage.setItem(weekKey,'done');$('saveMsg').textContent+='（星期日自動產生）';}
+ catch(e){$('saveMsg').textContent='本週自動週報未完成，請點擊「產生最近七天週報」重試。';}
 })();
 </script></body></html>
