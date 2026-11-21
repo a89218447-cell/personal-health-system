@@ -87,7 +87,7 @@ table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td
 <div class="card">
 <h2>紀錄與統計</h2>
 <div class="stats"><div class="stat"><span class="small">已記錄天數</span><b id="days">0</b></div></div>
-<div class="row" style="margin:12px 0"><button class="secondary" id="exportExercise">匯出運動 CSV</button><button class="secondary" id="exportBP">匯出血壓 CSV</button><button class="secondary" id="exportMed">匯出服藥 CSV</button><button class="secondary" id="backup">備份 JSON</button><label class="secondary" style="display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;cursor:pointer">匯入備份<input type="file" id="import" accept=".json,application/json" hidden></label></div>
+<div class="row" style="margin:12px 0"><button class="secondary" id="exportExercise">匯出運動 CSV</button><button class="secondary" id="exportBP">匯出血壓 CSV</button><button class="secondary" id="exportMed">匯出服藥 CSV</button><button class="secondary" id="backup">完整備份 JSON</button><label class="secondary" style="display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;cursor:pointer">匯入備份<input type="file" id="import" accept=".json,application/json" hidden></label></div>
 
 <p class="small">運動、血壓與服藥資料儲存在目前瀏覽器的本機空間。清除瀏覽器資料、解除安裝或更換手機可能導致資料遺失，請定期匯出備份。</p>
 </div>
@@ -491,8 +491,75 @@ $('exportMed').onclick=()=>{
  });
  csvDownload('服藥紀錄.csv',cols,rows);
 };
-$('backup').onclick=()=>download('每日運動紀錄備份.json',JSON.stringify(data,null,2),'application/json');
-$('import').onchange=async e=>{try{let obj=JSON.parse(await e.target.files[0].text());if(!obj||typeof obj!=='object')throw 0;data={...data,...obj};persist();alert('備份匯入完成')}catch(_){alert('檔案格式不正確')}e.target.value=''};
+// V2：完整備份包含運動、血壓、心跳及服藥資料（全部位於同一日期紀錄）
+$('backup').onclick=()=>{
+  try{
+    const payload=JSON.stringify(data,null,2);
+    download('每日健康管理完整備份.json',payload,'application/json');
+    $('saveMsg').textContent='完整備份已產生，包含運動、血壓、心跳及服藥資料。';
+  }catch(err){$('saveMsg').textContent='備份失敗：'+err.message;}
+};
+function backupCounts(obj){
+  let days=0,exercise=0,bp=0,med=0;
+  Object.entries(obj).forEach(([date,r])=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!r||typeof r!=='object'||Array.isArray(r)) return;
+    days++;
+    if(fields.some(f=>f==='breakfast'||f==='lunch'||f==='dinner'?!!r[f]:String(r[f]??'').trim()!=='')) exercise++;
+    Object.values(r.health||{}).forEach(h=>{
+      if(!h||typeof h!=='object') return;
+      if(h.sys!=null||h.dia!=null||h.pulse!=null) bp++;
+      if(h.medStatus==='taken') med++;
+    });
+  });
+  return {days,exercise,bp,med};
+}
+function mergeBackupRecords(current,incoming){
+  const merged={...current};
+  Object.entries(incoming).forEach(([date,record])=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!record||typeof record!=='object'||Array.isArray(record)) return;
+    const old=merged[date]||{};
+    const next={...old,...record,date};
+    // 同一天採欄位合併；health 再依上午／下午／晚上時段合併，避免整個 health 被覆蓋
+    if(old.health||record.health){
+      next.health={...(old.health||{})};
+      Object.entries(record.health||{}).forEach(([period,h])=>{
+        if(h&&typeof h==='object'&&!Array.isArray(h)) next.health[period]={...(next.health[period]||{}),...h};
+      });
+    }
+    merged[date]=next;
+  });
+  return merged;
+}
+$('import').onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(!file){e.target.value='';return;}
+  const before=data;
+  try{
+    const obj=JSON.parse(await file.text());
+    if(!obj||typeof obj!=='object'||Array.isArray(obj)) throw new Error('JSON 最外層必須是日期紀錄物件');
+    const entries=Object.entries(obj);
+    if(!entries.length) throw new Error('備份檔沒有任何日期紀錄');
+    const invalid=entries.filter(([date,r])=>!/^\d{4}-\d{2}-\d{2}$/.test(date)||!r||typeof r!=='object'||Array.isArray(r));
+    if(invalid.length) throw new Error('發現 '+invalid.length+' 筆格式不正確的日期資料，已取消匯入');
+    const incomingCounts=backupCounts(obj);
+    const currentCounts=backupCounts(data);
+    const summary=`備份檔：${file.name}\n日期紀錄：${incomingCounts.days} 天\n運動紀錄日期：${incomingCounts.exercise} 天\n血壓／心跳時段：${incomingCounts.bp} 筆\n服藥時段：${incomingCounts.med} 筆\n\n目前網站：運動 ${currentCounts.exercise} 天、血壓／心跳 ${currentCounts.bp} 筆、服藥 ${currentCounts.med} 筆。\n\n按「確定」將資料合併；同日期同欄位以備份內容為準，其他欄位及不同日期會保留。`;
+    if(!confirm(summary)) return;
+    const merged=mergeBackupRecords(data,obj);
+    const serialized=JSON.stringify(merged);
+    localStorage.setItem(KEY,serialized);
+    const verified=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if(JSON.stringify(verified)!==serialized) throw new Error('寫入後讀回驗證不一致');
+    data=verified;render();renderHealth();fill(data[$('date').value]||{});fillHealth();
+    const finalCounts=backupCounts(data);
+    alert(`完整備份匯入及驗證成功！\n運動紀錄日期：${finalCounts.exercise} 天\n血壓／心跳時段：${finalCounts.bp} 筆\n服藥時段：${finalCounts.med} 筆`);
+    $('saveMsg').textContent='完整備份已匯入，並完成本機讀回驗證。';
+  }catch(err){
+    data=before;
+    $('saveMsg').textContent='匯入未完成：'+(err.message||'檔案格式錯誤');
+    alert('匯入未完成：'+(err.message||'檔案格式錯誤')+'。原有資料未主動清除。');
+  }finally{e.target.value='';}
+};
 setDate(today());fill(data[today()]||{});render();
 if(!storageReady){$('parseMsg').textContent='警告：目前開啟方式無法使用本機儲存，請改用瀏覽器正常網址頁面；目前不會宣稱已保存。'}
 refreshHealthClock();fillHealth();renderHealth();
