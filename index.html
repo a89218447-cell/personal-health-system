@@ -45,7 +45,6 @@ table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td
 <p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；補登血壓及服藥時，請用完整中文說明時段、項目及數值，不要念斜線符號。每一筆血壓、心跳或服藥都必須在同一段語音說出時段及確切時間；例如：「上午七點半 收縮壓一百一十三 舒張壓六十七 心跳七十一。晚上七點 已經吃藥。」若沒有說出時間，該筆健康資料不會寫入，也不會用手機當下時間代替。</p>
 <label for="utterance">說一句話記錄健康狀況</label>
 <textarea id="utterance" placeholder="例如：上午七點半 收縮壓113 舒張壓67 心跳71。下午兩點 吃藥了。今天跑步20分鐘"></textarea>
-<div class="row" style="margin-top:9px"><button class="secondary" id="clearText">清除文字</button></div>
 <p class="small" id="parseMsg" aria-live="polite"></p>
 </div>
 <div class="card">
@@ -113,10 +112,10 @@ function dayName(d){return ['日','一','二','三','四','五','六'][new Date(
 function today(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function setDate(v){$('date').value=v;$('weekday').value=v?`星期${dayName(v)}`:''}
 function val(id){return $(id).type==='checkbox'?$(id).checked:$(id).value.trim()}
-function fill(r={}){fields.forEach(f=>{if($(f).type==='checkbox')$(f).checked=!!r[f];else $(f).value=r[f]||''})}
+function fill(r={}){fields.forEach(f=>{if($(f).type==='checkbox')$(f).checked=!!r[f];else if(f==='stairs'){const m=String(r[f]||'').match(/(\d+(?:\.\d+)?)/);$(f).value=m?m[1]+'層':'';}else $(f).value=r[f]||''})}
 function current(){let r={date:$('date').value};fields.forEach(f=>r[f]=val(f));return r}
 $('date').addEventListener('change',()=>{setDate($('date').value);fill(data[$('date').value]||{});fillHealth();});
-$('clearText').onclick=()=>$('utterance').value='';
+
 let exerciseAutoSaveTimer=null;
 function saveExerciseAutomatically(){
  const r=current();
@@ -162,39 +161,29 @@ function addSameDayValue(oldValue,newValue,id){
   const oldText=String(oldValue||'').trim();
   const newText=String(newValue||'').trim();
   const toNumber=x=>{
-    const map={'零':0,'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'二十':20,'三十':30};
-    return /^\d+(?:\.\d+)?$/.test(x)?Number(x):(map[x]??NaN);
+    if(/^\d+(?:\.\d+)?$/.test(x))return Number(x);
+    const map={'零':0,'〇':0,'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+    if(x==='十')return 10;
+    if(x.startsWith('廿'))return 20+(x.length>1?(map[x.slice(1)]??NaN):0);
+    if(x.includes('百')){const [a,b='']=x.split('百');const h=a?map[a]:1;return h===undefined?NaN:h*100+(b?toNumber(b):0)}
+    if(x.includes('十')){const [a,b='']=x.split('十');const t=a?map[a]:1,o=b?(map[b]??NaN):0;return t===undefined||!Number.isFinite(o)?NaN:t*10+o}
+    return map[x]??NaN;
   };
   if(id==='stairs'){
-    const read=x=>{const m=x.match(/^(\d+|零|一|二|兩|三|四|五|六|七|八|九|十|二十|三十)\s*(?:層|樓)?$/);return m?toNumber(m[1]):NaN};
+    const read=x=>{const m=String(x||'').match(/(?:^|\D)(\d+(?:\.\d+)?|[零〇一二兩三四五六七八九十廿百]+)\s*(?:層|樓)?/);return m?toNumber(m[1]):NaN};
     const a=read(oldText), b=read(newText);
-    if(!Number.isFinite(b)) return newText;
+    if(!Number.isFinite(b))return Number.isFinite(a)?String(a)+'層':'';
+    // 修復舊版本可能留下的「NaN一」等錯誤內容，僅累加可辨識的數字。
     return String((Number.isFinite(a)?a:0)+b)+'層';
   }
   if(id==='hang'){
-    const seconds=x=>{
-      let total=0, found=false, m;
-      const re=/(\d+|零|一|二|兩|三|四|五|六|七|八|九|十|二十|三十)\s*(分鐘|分|秒)/g;
-      while((m=re.exec(x))!==null){
-        const n=toNumber(m[1]); if(!Number.isFinite(n)) continue;
-        total+=n*(m[2]==='秒'?1:60); found=true;
-      }
-      return found?total:NaN;
-    };
-    const a=seconds(oldText), b=seconds(newText);
-    if(!Number.isFinite(b)) return newText;
-    const total=(Number.isFinite(a)?a:0)+b;
-    const mins=Math.floor(total/60), secs=total%60;
-    return (mins?mins+'分鐘':'')+(secs?secs+'秒':'') || '0秒';
+    const seconds=x=>{let total=0,found=false,m;const re=/(\d+|零|一|二|兩|三|四|五|六|七|八|九|十|二十|三十)\s*(分鐘|分|秒)/g;while((m=re.exec(x))!==null){const n=toNumber(m[1]);if(Number.isFinite(n)){total+=n*(m[2]==='秒'?1:60);found=true}}return found?total:NaN};
+    const a=seconds(oldText),b=seconds(newText);if(!Number.isFinite(b))return newText;const total=(Number.isFinite(a)?a:0)+b,mins=Math.floor(total/60),secs=total%60;return (mins?mins+'分鐘':'')+(secs?secs+'秒':'')||'0秒';
   }
-  const oldNormalized=oldText.replace(/下\s*$/,'次');
-  const newNormalized=newText.replace(/下\s*$/,'次');
-  const oldMatch=oldNormalized.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
-  const newMatch=newNormalized.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
-  if(!newMatch) return newNormalized;
-  if(!oldMatch) return newNormalized;
-  const oldUnit=oldMatch[2].trim(), newUnit=newMatch[2].trim();
-  if(oldUnit && newUnit && oldUnit!==newUnit) return newNormalized;
+  const oldNormalized=oldText.replace(/下\s*$/,'次'),newNormalized=newText.replace(/下\s*$/,'次');
+  const oldMatch=oldNormalized.match(/^(\d+(?:\.\d+)?)\s*(.*)$/),newMatch=newNormalized.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+  if(!newMatch)return newNormalized;if(!oldMatch)return newNormalized;
+  const oldUnit=oldMatch[2].trim(),newUnit=newMatch[2].trim();if(oldUnit&&newUnit&&oldUnit!==newUnit)return newNormalized;
   return String(Number(oldMatch[1])+Number(newMatch[1]))+(newUnit||oldUnit);
 }
 
