@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#176b57">
-<title>個人健康管理系統</title>
+<title>個人健康管理系統 V4</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#18312b;background:#f4f7f5}
 *{box-sizing:border-box}body{margin:0;padding:16px;max-width:980px;margin:auto}
@@ -29,7 +29,7 @@ table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td
 <header><h1>個人健康管理</h1><p>運動・血壓・服藥｜本機優先，資料保存在此瀏覽器</p></header>
 <div class="card">
 <h2>語音登記（停止說話後自動儲存）</h2>
-<p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；同一天再次輸入相同運動項目會累加數值，不同單位不混加。</p>
+<p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；補登血壓或服藥時，請說出實際時段與時間（例如「早上七點半血壓 113/67，晚上八點吃藥了」），系統以語音說出的時間為準，不使用手機當下時間。</p>
 <label for="utterance">說一句話記錄健康狀況</label>
 <textarea id="utterance" placeholder="例如：高血壓113 低血壓67 心跳71 吃藥了；今天跑步20分鐘"></textarea>
 <div class="row" style="margin-top:9px"><button class="secondary" id="clearText">清除文字</button></div>
@@ -237,20 +237,41 @@ function parseSpeech(s){
   const plainBp=s.match(/血壓\s*(\d{2,3})[\s、，,]+(\d{2,3})/);
   const bp=(highBp&&lowBp)?[null,highBp[1],lowBp[1]]:slashBp?[null,slashBp[1],slashBp[2]]:plainBp?[null,plainBp[1],plainBp[2]]:null;
   const hr=s.match(/心跳\s*(\d{2,3})/);
-  const medTaken=/吃藥了/.test(s);
-  const spokenPeriod=/上午|早上|早晨/.test(s)?'morning':/下午/.test(s)?'afternoon':/晚上|夜間|夜晚/.test(s)?'evening':currentPeriod();
-  const medPeriod=new Date().getHours()<18?'morning':'evening';
+  const medTaken=/吃藥了|服藥了|已服藥/.test(s);
+  // 語音補登以使用者說出的實際時間為準，絕不以手機當下時間代替
+  function spokenClock(text){
+    let m=text.match(/(?:凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2})\s*[:：]\s*(\d{2})/);
+    if(m){let hh=Number(m[1]),mm=Number(m[2]);if(hh<=23&&mm<=59)return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
+    m=text.match(/(凌晨|早上|早晨|上午|中午|下午|晚上|夜間|夜晚)?\s*(\d{1,2})\s*點(?:\s*(半|\d{1,2}\s*分?))?/);
+    if(!m)return '';
+    let h=Number(m[2]), minute=m[3]==='半'?30:(m[3]?Number(m[3].replace(/\D/g,'')):0);
+    const period=m[1]||'';
+    if(h>23||minute>59)return '';
+    if(/晚上|夜間|夜晚/.test(period)&&h<12)h+=12;
+    else if(/下午/.test(period)&&h<12)h+=12;
+    else if(/中午/.test(period)&&h<11)h+=12;
+    else if(/凌晨/.test(period)&&h===12)h=0;
+    else if(/早上|早晨|上午/.test(period)&&h===12)h=0;
+    return String(h).padStart(2,'0')+':'+String(minute).padStart(2,'0');
+  }
+  const spokenTime=spokenClock(s);
+  const explicitPeriod=/上午|早上|早晨|凌晨/.test(s)?'morning':/下午|中午/.test(s)?'afternoon':/晚上|夜間|夜晚/.test(s)?'evening':'';
+  const timeHour=spokenTime?Number(spokenTime.slice(0,2)):null;
+  const inferredPeriod=explicitPeriod||(timeHour!==null?(timeHour<5||timeHour>=18?'evening':timeHour<12?'morning':'afternoon'):'');
   if(bp||hr||medTaken){
-    r.health=r.health||{};
-    const now=localClock();
-    const h=r.health[spokenPeriod]||{};
-    if(bp){h.sys=Number(bp[1]);h.dia=Number(bp[2]);h.measureTime=now;found.push(periodLabel(spokenPeriod)+'血壓');}
-    if(hr){h.pulse=Number(hr[1]);if(!h.measureTime)h.measureTime=now;found.push('心跳');}
-    r.health[spokenPeriod]=h;
-    if(medTaken){
-      const mh=r.health[medPeriod]||{};
-      mh.medStatus='taken';mh.medTime=now;r.health[medPeriod]=mh;
-      found.push(medPeriod==='morning'?'上午服藥':'晚上服藥');
+    if(!inferredPeriod){found.push('血壓／心跳／服藥未記錄：請在語音中說明早上、下午或晚上，並說出實際時間');}
+    else{
+      r.health=r.health||{};
+      const h=r.health[inferredPeriod]||{};
+      if(bp){h.sys=Number(bp[1]);h.dia=Number(bp[2]);h.measureTime=spokenTime||'';found.push(periodLabel(inferredPeriod)+'血壓');}
+      if(hr){h.pulse=Number(hr[1]);if(spokenTime)h.measureTime=spokenTime;found.push('心跳');}
+      if(bp||hr)r.health[inferredPeriod]=h;
+      if(medTaken){
+        const medPeriod=inferredPeriod==='afternoon'?'morning':inferredPeriod;
+        const mh=r.health[medPeriod]||{};
+        mh.medStatus='taken';mh.medTime=spokenTime||'';r.health[medPeriod]=mh;
+        found.push(medPeriod==='morning'?'上午服藥':'晚上服藥');
+      }
     }
   }
   return {r,found};
