@@ -566,26 +566,24 @@ refreshHealthClock();fillHealth();renderHealth();
 
 fillHealth();setInterval(refreshHealthClock,15000);
 
-// 每週日首次開啟系統時，自動匯出三份健康紀錄；同一週只執行一次
+// 每週日任一時間首次開啟系統時，自動匯出完整 JSON；同一週只執行一次
 (function weeklySundayExport(){
  const now=new Date();
  if(now.getDay()!==0) return;
  const weekStart=new Date(now);
  weekStart.setHours(0,0,0,0);
  weekStart.setDate(now.getDate()-now.getDay());
- const weekKey='health_weekly_export_'+weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0')+'-'+String(weekStart.getDate()).padStart(2,'0');
+ const weekKey='health_weekly_json_backup_'+weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0')+'-'+String(weekStart.getDate()).padStart(2,'0');
  if(localStorage.getItem(weekKey)==='done') return;
- // 先標記避免頁面重整造成重複下載；下載仍由瀏覽器管理
+ // 週日第一次開啟網站時下載一份完整 JSON，涵蓋運動、血壓、心跳及服藥紀錄
  try{
-   $('exportExercise').click();
-   $('exportBP').click();
-   $('exportMed').click();
+   $('backup').click();
    localStorage.setItem(weekKey,'done');
    const msg=$('saveMsg');
-   if(msg) msg.textContent='本週日已自動匯出運動、血壓及服藥三份 CSV。';
+   if(msg) msg.textContent='本週完整 JSON 備份已觸發下載。若瀏覽器詢問下載權限，請允許。';
  }catch(e){
    const msg=$('saveMsg');
-   if(msg) msg.textContent='本週自動匯出未完成，請手動匯出三份 CSV。';
+   if(msg) msg.textContent='本週自動備份未完成，請手動點擊「完整備份 JSON」。';
  }
 })();
 </script></body></html>
