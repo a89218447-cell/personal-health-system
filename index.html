@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#176b57">
-<title>個人健康管理系統 V10</title>
+<title>個人健康管理系統 V15</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#18312b;background:#f4f7f5}
 *{box-sizing:border-box}body{margin:0;padding:16px;max-width:980px;margin:auto}
@@ -13,7 +13,7 @@ h1{font-size:1.45rem;margin:0 0 6px}header p{margin:0;opacity:.9;font-size:.92re
 h2{font-size:1.08rem;margin:0 0 12px}
 label{display:block;font-weight:650;margin:9px 0 5px}
 input,textarea,select,button{font:inherit}input,textarea,select{width:100%;padding:11px;border:1px solid #cbd9d1;border-radius:10px;background:#fff;color:#18312b}
-textarea{min-height:88px;resize:vertical}
+textarea{height:64px;min-height:64px;resize:none}
 button{border:0;border-radius:10px;padding:11px 14px;background:#176b57;color:#fff;font-weight:650;cursor:pointer}
 button.secondary{background:#e8f0ec;color:#185342}button.danger{background:#a73535}
 .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
@@ -41,56 +41,62 @@ table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:790px}th,td
 <header><h1>個人健康管理</h1><p>運動・血壓・服藥｜本機優先，資料保存在此瀏覽器</p></header>
 <div class="card">
 <h2>語音登記（停止說話後自動儲存）</h2>
-<p class="small">成功儲存並驗證後，語音輸入框會自動清空；未辨識或儲存失敗時會保留文字。</p>
-<p class="small">使用手機已下載的離線語音鍵盤輸入。停止輸入約 3 秒後自動辨識並儲存；補登血壓及服藥時，請用完整中文說明時段、項目及數值，不要念斜線符號。每一筆血壓、心跳或服藥都必須在同一段語音說出時段及確切時間；例如：「上午七點半 收縮壓一百一十三 舒張壓六十七 心跳七十一。晚上七點 已經吃藥。」若沒有說出時間，該筆健康資料不會寫入，也不會用手機當下時間代替。</p>
+<p class="small">完整語音範例：伏地挺身20次，跑步20分鐘，爬樓梯5層，深蹲20次，伸展10分鐘，吊單槓1分鐘30秒，凱格爾20次。上午七點半收縮壓113、舒張壓67、心跳71；上午八點已服藥。下午一點收縮壓115、舒張壓70、心跳72。晚上七點收縮壓118、舒張壓72、心跳70；晚上八點已服藥。</p>
 <label for="utterance">說一句話記錄健康狀況</label>
-<textarea id="utterance" placeholder="例如：上午七點半 收縮壓113 舒張壓67 心跳71。下午兩點 吃藥了。今天跑步20分鐘"></textarea>
+<textarea id="utterance" rows="2"></textarea>
 <p class="small" id="parseMsg" aria-live="polite"></p>
 </div>
 <div class="card">
 <h2>確認／手動調整紀錄</h2>
-<div class="row"><div><label for="date">日期</label><input type="date" id="date"></div><div><label for="weekday">星期</label><input id="weekday" readonly></div></div>
-<label>飯後運動（有運動才勾選；沒運動保持空白）</label>
+<div class="row"><div><label for="date">補登日期</label><input type="date" id="date"></div><div><label for="weekday">星期</label><input id="weekday" readonly></div></div>
+<p class="small">補登日期預設為今天。更改補登日期時，下方各類查詢會先同步顯示同一天；之後各查詢日期可獨立調整，查詢日期不會反向改變補登日期，也不會影響其他查詢日期。</p>
+<p class="small">補登模式適用於運動、血壓／心跳及服藥紀錄；已有資料會保留，只有空白欄位會新增。</p>
+<label>飯後運動</label>
 <div class="checkgrid">
 <label class="check"><input type="checkbox" id="breakfast">早餐後</label>
 <label class="check"><input type="checkbox" id="lunch">午餐後</label>
 <label class="check"><input type="checkbox" id="dinner">晚餐後</label>
 </div>
 <div class="row">
-<div><label for="pushups">伏地挺身（次）</label><input type="text" inputmode="numeric" id="pushups" placeholder="例如 20次"></div>
-<div><label for="run">跑步（分鐘／次數）</label><input id="run" placeholder="例如 20分鐘"></div>
+<div><label for="pushups">伏地挺身（次）</label><input type="text" inputmode="numeric" id="pushups"></div>
+<div><label for="run">跑步（分鐘／次數）</label><input id="run"></div>
 </div>
 <div class="row">
-<div><label for="stairs">爬樓梯（層）</label><input id="stairs" placeholder="例如 5"></div>
-<div><label for="squat">深蹲（次）</label><input type="text" inputmode="numeric" id="squat" placeholder="例如 20次"></div>
+<div><label for="stairs">爬樓梯（層）</label><input id="stairs"></div>
+<div><label for="squat">深蹲（次）</label><input type="text" inputmode="numeric" id="squat"></div>
 </div>
 <div class="row">
-<div><label for="stretch">伸展（分鐘）</label><input id="stretch" placeholder="例如 10分鐘"></div>
-<div><label for="hang">吊單槓（分鐘／秒）</label><input id="hang" placeholder="例如 1分鐘30秒"></div>
+<div><label for="stretch">伸展（分鐘）</label><input id="stretch"></div>
+<div><label for="hang">吊單槓（分鐘／秒）</label><input id="hang"></div>
 </div>
-<label for="kegel">凱格爾（次數／組數）</label><input id="kegel" placeholder="例如 2組，每組10次">
+<label for="kegel">凱格爾（次數／組數）</label><input id="kegel">
 <p class="small" id="saveMsg" aria-live="polite"></p>
+<h3>指定日期運動紀錄</h3>
+<label for="exerciseRecordDate">選擇查詢日期</label><input type="date" id="exerciseRecordDate">
 <div class="tablewrap"><table><thead><tr><th>日期</th><th>星期</th><th>早餐後</th><th>午餐後</th><th>晚餐後</th><th>伏地挺身</th><th>跑步</th><th>爬樓梯</th><th>深蹲</th><th>伸展</th><th>吊單槓</th><th>凱格爾</th><th>操作</th></tr></thead><tbody id="records"></tbody></table></div>
 </div>
 
 <div class="card">
 <h2>血壓與服藥管理</h2>
-<p class="small">血壓分上午、晚上、下午三個時段記錄；服藥分上午、晚上兩個時段記錄。各時段獨立儲存，修改其中一個時段不會覆蓋其他時段。語音輸入依照說出的時段寫入對應欄位。</p>
+
 <h3>血壓與心跳（三個時段）</h3>
 <div class="row">
-  <div class="slot"><h4>上午血壓</h4><label for="sys_morning">收縮壓（mmHg）</label><input id="sys_morning" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_morning">舒張壓（mmHg）</label><input id="dia_morning" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_morning">心跳（次／分）</label><input id="pulse_morning" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_morning" readonly></div>
-  <div class="slot"><h4>晚上血壓</h4><label for="sys_evening">收縮壓（mmHg）</label><input id="sys_evening" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_evening">舒張壓（mmHg）</label><input id="dia_evening" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_evening">心跳（次／分）</label><input id="pulse_evening" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_evening" readonly></div>
-  <div class="slot"><h4>下午血壓</h4><label for="sys_afternoon">收縮壓（mmHg）</label><input id="sys_afternoon" type="number" inputmode="numeric" placeholder="收縮壓"><label for="dia_afternoon">舒張壓（mmHg）</label><input id="dia_afternoon" type="number" inputmode="numeric" placeholder="舒張壓"><label for="pulse_afternoon">心跳（次／分）</label><input id="pulse_afternoon" type="number" inputmode="numeric" placeholder="心跳"><label>測量時間</label><input id="time_afternoon" readonly></div>
+  <div class="slot"><h4>上午血壓</h4><label for="sys_morning">收縮壓（mmHg）</label><input id="sys_morning" type="number" inputmode="numeric"><label for="dia_morning">舒張壓（mmHg）</label><input id="dia_morning" type="number" inputmode="numeric"><label for="pulse_morning">心跳（次／分）</label><input id="pulse_morning" type="number" inputmode="numeric"><label>測量時間</label><input id="time_morning" readonly></div>
+  <div class="slot"><h4>晚上血壓</h4><label for="sys_evening">收縮壓（mmHg）</label><input id="sys_evening" type="number" inputmode="numeric"><label for="dia_evening">舒張壓（mmHg）</label><input id="dia_evening" type="number" inputmode="numeric"><label for="pulse_evening">心跳（次／分）</label><input id="pulse_evening" type="number" inputmode="numeric"><label>測量時間</label><input id="time_evening" readonly></div>
+  <div class="slot"><h4>下午血壓</h4><label for="sys_afternoon">收縮壓（mmHg）</label><input id="sys_afternoon" type="number" inputmode="numeric"><label for="dia_afternoon">舒張壓（mmHg）</label><input id="dia_afternoon" type="number" inputmode="numeric"><label for="pulse_afternoon">心跳（次／分）</label><input id="pulse_afternoon" type="number" inputmode="numeric"><label>測量時間</label><input id="time_afternoon" readonly></div>
 </div>
+<h3>指定日期血壓／心跳紀錄</h3>
+<label for="bpRecordDate">選擇查詢日期</label><input type="date" id="bpRecordDate">
+<div class="tablewrap"><table style="min-width:650px"><thead><tr><th>日期</th><th>上午血壓</th><th>上午心跳</th><th>下午血壓</th><th>下午心跳</th><th>晚上血壓</th><th>晚上心跳</th><th>操作</th></tr></thead><tbody id="bpRecords"></tbody></table></div>
 <h3>服藥紀錄（兩個時段）</h3>
 <div class="row">
-  <div class="slot"><h4>上午服藥</h4><label for="med_morning">服藥狀態</label><select id="med_morning"><option value="">未輸入／未服用</option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_morning" readonly></div>
-  <div class="slot"><h4>晚上服藥</h4><label for="med_evening">服藥狀態</label><select id="med_evening"><option value="">未輸入／未服用</option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_evening" readonly></div>
+  <div class="slot"><h4>上午服藥</h4><label for="med_morning">服藥狀態</label><select id="med_morning"><option value="" selected></option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_morning" readonly></div>
+  <div class="slot"><h4>晚上服藥</h4><label for="med_evening">服藥狀態</label><select id="med_evening"><option value="" selected></option><option value="taken">已服用</option></select><label>服藥時間</label><input id="medtime_evening" readonly></div>
 </div>
-<p class="small" id="healthMsg" aria-live="polite">切換日期會載入該日全部時段；修改欄位後自動儲存。</p>
-<div class="tablewrap">
-<table style="min-width:760px"><thead><tr><th>日期</th><th>上午血壓</th><th>上午心跳</th><th>晚上血壓</th><th>晚上心跳</th><th>下午血壓</th><th>下午心跳</th><th>上午服藥狀態</th><th>晚上服藥狀態</th><th>操作</th></tr></thead><tbody id="healthRecords"></tbody></table>
-</div>
+<p class="small" id="healthMsg" aria-live="polite"></p>
+<h3>指定日期服藥紀錄</h3>
+<label for="medRecordDate">選擇查詢日期</label><input type="date" id="medRecordDate">
+<div class="tablewrap"><table style="min-width:520px"><thead><tr><th>日期</th><th>上午服藥</th><th>晚上服藥</th><th>操作</th></tr></thead><tbody id="medRecords"></tbody></table></div>
 </div>
 
 <div class="card">
@@ -114,21 +120,66 @@ function setDate(v){$('date').value=v;$('weekday').value=v?`星期${dayName(v)}`
 function val(id){return $(id).type==='checkbox'?$(id).checked:$(id).value.trim()}
 function fill(r={}){fields.forEach(f=>{if($(f).type==='checkbox')$(f).checked=!!r[f];else if(f==='stairs'){const m=String(r[f]||'').match(/(\d+(?:\.\d+)?)/);$(f).value=m?m[1]+'層':'';}else $(f).value=r[f]||''})}
 function current(){let r={date:$('date').value};fields.forEach(f=>r[f]=val(f));return r}
-$('date').addEventListener('change',()=>{setDate($('date').value);fill(data[$('date').value]||{});fillHealth();});
+function isBackfillMode(){return true;}
+function hasValue(v){return v!==undefined&&v!==null&&String(v).trim()!=='';}
+function updateQueryInputLocks(){
+ const backfillDate=$('date').value;
+ const exerciseEditable=$('exerciseRecordDate').value===backfillDate;
+ fields.forEach(f=>$(f).disabled=!exerciseEditable);
+ const bpEditable=$('bpRecordDate').value===backfillDate;
+ ['sys','dia','pulse'].forEach(k=>bpPeriods.forEach(p=>{const el=$(k+'_'+p);if(el)el.disabled=!bpEditable;}));
+ const medEditable=$('medRecordDate').value===backfillDate;
+ medPeriods.forEach(p=>{const el=$('med_'+p);if(el)el.disabled=!medEditable;});
+}
+function loadExerciseQuery(){
+ const queryDate=$('exerciseRecordDate').value||today();
+ fill(data[queryDate]||{});
+ updateQueryInputLocks();
+}
+$('date').addEventListener('change',()=>{
+ clearTimeout(exerciseAutoSaveTimer);pendingExerciseFields.clear();
+ clearTimeout(healthAutoSaveTimer);
+ const selected=$('date').value;
+ setDate(selected);
+ ['exerciseRecordDate','bpRecordDate','medRecordDate'].forEach(id=>{if($(id))$(id).value=selected;});
+ loadExerciseQuery();
+ fillHealth();
+ render();
+ renderHealth();
+});
 
 let exerciseAutoSaveTimer=null;
+let pendingExerciseFields=new Set();
 function saveExerciseAutomatically(){
+ const changedFields=new Set(pendingExerciseFields);pendingExerciseFields.clear();
  const r=current();
  if(!r.date){$('saveMsg').textContent='請先選擇日期';return;}
- const hasExercise=fields.some(f=>f==='breakfast'||f==='lunch'||f==='dinner'?!!r[f]:String(r[f]??'').trim()!=='');
- const existing=data[r.date]||{date:r.date};
- const merged={...existing,date:r.date};
+ const backfill=isBackfillMode();
+ const hasExercise=fields.some(f=>f==='breakfast'||f==='lunch'||f==='dinner'?!!r[f]:hasValue(r[f]));
+ const existingRecord=data[r.date]||{date:r.date};
+ const merged={...existingRecord,date:r.date};
+ let added=0,skipped=0;const refused=[];
  fields.forEach(f=>{
-   if(f==='breakfast'||f==='lunch'||f==='dinner'){
-     if(r[f]) merged[f]=true; else delete merged[f];
-   }else if(String(r[f]??'').trim()!=='') merged[f]=r[f]; else delete merged[f];
+   if(!changedFields.has(f))return;
+   const incoming=(f==='breakfast'||f==='lunch'||f==='dinner')?!!r[f]:hasValue(r[f]);
+   const alreadyExists=(f==='breakfast'||f==='lunch'||f==='dinner')?!!existingRecord[f]:hasValue(existingRecord[f]);
+   if(backfill){
+     if(alreadyExists){
+       const oldVal=(f==='breakfast'||f==='lunch'||f==='dinner')?!!existingRecord[f]:String(existingRecord[f]??'').trim();
+       const newVal=(f==='breakfast'||f==='lunch'||f==='dinner')?!!r[f]:String(r[f]??'').trim();
+       skipped++;refused.push(f);return;
+     }
+     if(!incoming)return;
+     merged[f]=(f==='breakfast'||f==='lunch'||f==='dinner')?true:r[f];added++;
+   }else{
+     if(f==='breakfast'||f==='lunch'||f==='dinner'){if(r[f])merged[f]=true;else delete merged[f];}
+     else if(hasValue(r[f]))merged[f]=r[f];else delete merged[f];
+   }
  });
- if(!hasExercise){
+ // 補登模式絕不因畫面空白而刪除任何原有欄位
+ if(backfill){
+   data[r.date]=merged;
+ }else if(!hasExercise){
    fields.forEach(f=>delete merged[f]);
    if(!merged.health) delete data[r.date];
    else data[r.date]=merged;
@@ -136,20 +187,23 @@ function saveExerciseAutomatically(){
  try{
    localStorage.setItem(KEY,JSON.stringify(data));
    const check=JSON.parse(localStorage.getItem(KEY)||'{}');
-   if(hasExercise&&!check[r.date]) throw new Error('讀回驗證失敗');
+   if(!check[r.date]) throw new Error('讀回驗證失敗');
    render();renderHealth();
-   $('saveMsg').textContent=hasExercise?'已自動儲存並驗證手機本機紀錄。':'目前沒有運動資料，未新增紀錄。';
+   if(backfill && $('exerciseRecordDate').value===r.date)fill(check[r.date]);
+   $('saveMsg').textContent=backfill?(refused.length?refused.map(f=>`${exerciseFieldLabel(f)}：該欄位已有資料不得補登。`).join(' '):'')+`補登完成：新增 ${added} 個空白欄位，${skipped} 個已有紀錄欄位予以保留。原有資料未刪除。`:(hasExercise?'已自動儲存並驗證手機本機紀錄。':'目前沒有運動資料，未新增紀錄。');
  }catch(e){$('saveMsg').textContent='自動儲存失敗：'+e.message;}
 }
-function scheduleExerciseAutoSave(){
+function exerciseFieldLabel(f){return ({breakfast:'早餐後運動',lunch:'午餐後運動',dinner:'晚餐後運動',pushups:'伏地挺身',run:'跑步',stairs:'爬樓梯',squat:'深蹲',stretch:'伸展',hang:'吊單槓',kegel:'凱格爾'})[f]||f;}
+function scheduleExerciseAutoSave(field){
+ if(field)pendingExerciseFields.add(field);
  clearTimeout(exerciseAutoSaveTimer);
  $('saveMsg').textContent='已接收輸入，停止操作後約 1 秒自動儲存…';
  exerciseAutoSaveTimer=setTimeout(saveExerciseAutomatically,1000);
 }
 fields.forEach(f=>{
  const el=$(f);
- el.addEventListener(el.type==='checkbox'?'change':'input',scheduleExerciseAutoSave);
- el.addEventListener('change',scheduleExerciseAutoSave);
+ el.addEventListener(el.type==='checkbox'?'change':'input',()=>scheduleExerciseAutoSave(f));
+ el.addEventListener('change',()=>scheduleExerciseAutoSave(f));
 });
 let autoSaveTimer=null;
 
@@ -190,7 +244,8 @@ function addSameDayValue(oldValue,newValue,id){
 
 function parseSpeech(s){
   s=String(s||'').replace(/[，,、]/g,' ').replace(/\s+/g,' ').trim();
-  const r=data[$('date').value]||current();
+  const existingForDate=data[$('date').value]||{};
+  const r=isBackfillMode()?{date:$('date').value||today()}:JSON.parse(JSON.stringify(existingForDate.date?existingForDate:current()));
   r.date=$('date').value||today();
   const found=[];
   const numberWords={'零':0,'〇':0,'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
@@ -309,9 +364,67 @@ function parseSpeech(s){
   });
   return {r,found};
 }
+function parseVoiceDeleteCommand(text){
+  const s=String(text||'').replace(/\s+/g,' ').trim();
+  if(!/刪除|清除|移除/.test(s))return null;
+  let m=s.match(/(20\d{2})\s*[年\/-]\s*(\d{1,2})\s*[月\/-]\s*(\d{1,2})\s*日?/);
+  if(!m){
+    // 刪除紀錄必須說出完整年份，避免誤刪其他年度同月同日的資料。
+    return {error:'刪除指令請說出完整日期，例如：刪除 2026年11月21日 的運動紀錄。'};
+  }
+  const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
+  const d=new Date(year,month-1,day);
+  if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day)return {error:'日期格式不正確，沒有刪除任何資料。'};
+  const date=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const categories=[];
+  if(/運動|跑步|深蹲|爬樓梯|伏地挺身|伸展|吊單槓|凱格爾/.test(s))categories.push('exercise');
+  if(/血壓|心跳/.test(s))categories.push('bp');
+  if(/服藥|吃藥|藥物/.test(s))categories.push('med');
+  if(categories.length!==1)return {error:'請一次指定一類資料：運動紀錄、血壓心跳紀錄，或服藥紀錄。沒有刪除任何資料。'};
+  return {date,category:categories[0]};
+}
+function deleteVoiceCategory(date,category){
+  const record=data[date];
+  if(!record)return {ok:false,message:`${date} 沒有找到該類紀錄，未刪除資料。`};
+  let removed=0;
+  if(category==='exercise'){
+    fields.forEach(f=>{if(Object.prototype.hasOwnProperty.call(record,f)){delete record[f];removed++;}});
+  }else{
+    const periods=category==='bp'?bpPeriods:medPeriods;
+    periods.forEach(period=>{
+      const h=record.health?.[period];if(!h)return;
+      const keys=category==='bp'?['sys','dia','pulse','measureTime']:['medStatus','medTime'];
+      keys.forEach(k=>{if(Object.prototype.hasOwnProperty.call(h,k)){delete h[k];removed++;}});
+      if(!Object.keys(h).length)delete record.health[period];
+    });
+    if(record.health&&!Object.keys(record.health).length)delete record.health;
+  }
+  if(!removed)return {ok:false,message:`${date} 沒有找到指定的${category==='exercise'?'運動':category==='bp'?'血壓心跳':'服藥'}紀錄，未刪除資料。`};
+  if(!Object.keys(record).some(k=>k!=='date'))delete data[date];
+  try{
+    localStorage.setItem(KEY,JSON.stringify(data));
+    const check=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if(JSON.stringify(check)!==JSON.stringify(data))throw new Error('讀回驗證不一致');
+    render();renderHealth();
+    if($('date').value===date){fill(data[date]||{});fillHealth();}
+    const label=category==='exercise'?'運動':category==='bp'?'血壓與心跳':'服藥';
+    return {ok:true,message:`已刪除 ${date} 的${label}紀錄（${removed} 個欄位）；其他類別資料保留。`};
+  }catch(e){return {ok:false,message:'刪除儲存失敗：'+e.message+'。請立即檢查並重新匯出備份。'};}
+}
 function autoSaveSpeech(){
   const s=$('utterance').value.trim();
   if(!s)return;
+  const deleteCommand=parseVoiceDeleteCommand(s);
+  if(deleteCommand){
+    if(deleteCommand.error){$('parseMsg').textContent=deleteCommand.error;$('utterance').value='';return;}
+    const labels={exercise:'運動',bp:'血壓與心跳',med:'服藥'};
+    const prompt=`確認刪除 ${deleteCommand.date} 的「${labels[deleteCommand.category]}」紀錄嗎？\n只刪除這一類，其他兩類資料會保留。此操作無法自動復原，請先確認已有 JSON 備份。`;
+    if(!confirm(prompt)){$('parseMsg').textContent='已取消刪除，所有資料均保留。';$('utterance').value='';return;}
+    const result=deleteVoiceCategory(deleteCommand.date,deleteCommand.category);
+    $('parseMsg').textContent=result.message;
+    $('utterance').value='';
+    return;
+  }
   const {r,found}=parseSpeech(s);
   const validFound=found.filter(x=>!x.includes('未寫入')&&!x.includes('不是服藥時段'));
   if(!validFound.length){
@@ -319,12 +432,45 @@ function autoSaveSpeech(){
     return;
   }
   try{
-    data[r.date]=r;
+    const oldRecord=data[r.date]||{date:r.date};
+    let savedRecord;
+    if(isBackfillMode()){
+      // 語音登記也必須遵守補登防覆蓋：只補空白欄位，不替換整日資料
+      savedRecord={...oldRecord,date:r.date};
+      let speechAdded=0,speechSkipped=0;const speechRefused=[];const exerciseNames={breakfast:'早餐後運動',lunch:'午餐後運動',dinner:'晚餐後運動',pushups:'伏地挺身',run:'跑步',stairs:'爬樓梯',squat:'深蹲',stretch:'伸展',hang:'吊單槓',kegel:'凱格爾'};
+      fields.forEach(f=>{
+        const incoming=(f==='breakfast'||f==='lunch'||f==='dinner')?!!r[f]:hasValue(r[f]);
+        if(!incoming)return;
+        const existed=(f==='breakfast'||f==='lunch'||f==='dinner')?!!oldRecord[f]:hasValue(oldRecord[f]);
+        if(existed){speechSkipped++;speechRefused.push(exerciseNames[f]||f);return;}
+        savedRecord[f]=r[f];speechAdded++;
+      });
+      if(r.health&&typeof r.health==='object'){
+        savedRecord.health={...(oldRecord.health||{})};
+        Object.entries(r.health).forEach(([period,incomingHealth])=>{
+          if(!incomingHealth||typeof incomingHealth!=='object')return;
+          const oldHealth=savedRecord.health[period]||{};
+          const mergedHealth={...oldHealth};
+          Object.entries(incomingHealth).forEach(([key,value])=>{
+            if(!hasValue(value))return;
+            if(key==='measureTime'||key==='medTime'){if(!hasValue(oldHealth[key]))mergedHealth[key]=value;return;}
+            if(hasValue(oldHealth[key])){speechSkipped++;speechRefused.push(({sys:'收縮壓',dia:'舒張壓',pulse:'心跳',medStatus:'服藥狀態'})[key]+'（'+periodLabel(period)+'）');return;}
+            mergedHealth[key]=value;speechAdded++;
+          });
+          savedRecord.health[period]=mergedHealth;
+        });
+      }
+      data[r.date]=savedRecord;
+      $('parseMsg').textContent=(speechRefused.length?speechRefused.map(name=>name+'：該欄位已有資料不得補登。').join(' '):'')+'語音補登完成：新增 '+speechAdded+' 個空白欄位，略過 '+speechSkipped+' 個已有資料欄位。';
+    }else{
+      // 一般模式維持原本語音登記方式
+      savedRecord=r;data[r.date]=r;
+    }
     localStorage.setItem(KEY,JSON.stringify(data));
     const check=JSON.parse(localStorage.getItem(KEY)||'{}');
-    if(!check[r.date] || fields.some(f=>String(check[r.date][f]??'')!==String(r[f]??''))) throw new Error('儲存驗證不一致');
-    setDate(r.date);fill(r);render();renderHealth();fillHealth();
-    $('parseMsg').textContent='本機自動儲存成功：'+validFound.join('、')+(found.length>validFound.length?'；另有未完整項目未寫入':'')+'；輸入文字已清空。';
+    if(!check[r.date] || JSON.stringify(check[r.date])!==JSON.stringify(savedRecord)) throw new Error('儲存驗證不一致');
+    setDate(r.date);fill(check[r.date]);render();renderHealth();fillHealth();
+    if(!isBackfillMode()) $('parseMsg').textContent='本機自動儲存成功：'+validFound.join('、')+(found.length>validFound.length?'；另有未完整項目未寫入':'')+'；輸入文字已清空。';
     $('saveMsg').textContent='已寫入並驗證手機此瀏覽器的本機儲存空間。';
     $('utterance').value='';
   }catch(e){
@@ -334,8 +480,8 @@ function autoSaveSpeech(){
 }
 function scheduleAutoSave(){
   clearTimeout(autoSaveTimer);
-  $('parseMsg').textContent='已收到文字，停止輸入後約 3 秒自動辨識及儲存…';
-  autoSaveTimer=setTimeout(autoSaveSpeech,3000);
+  $('parseMsg').textContent='已收到文字，停止輸入後 5 秒自動辨識及儲存…';
+  autoSaveTimer=setTimeout(autoSaveSpeech,5000);
 }
 $('utterance').addEventListener('input',scheduleAutoSave);
 $('utterance').addEventListener('change',scheduleAutoSave);
@@ -366,61 +512,83 @@ const bpPeriods=['morning','afternoon','evening'];
 const medPeriods=['morning','evening'];
 let healthAutoSaveTimer=null;
 function fillHealth(){
- const date=$('date').value||today();
- const health=data[date]?.health||{};
- [...bpPeriods,...medPeriods].forEach(p=>{
-   const h=health[p]||{};
-   if(bpPeriods.includes(p)){
-     $('sys_'+p).value=h.sys??''; $('dia_'+p).value=h.dia??''; $('pulse_'+p).value=h.pulse??'';
-     $('time_'+p).value=h.measureTime||'';
-   }
-   if(medPeriods.includes(p)){
-     $('med_'+p).value=h.medStatus??''; $('medtime_'+p).value=h.medTime??'';
-   }
+ const bpDate=$('bpRecordDate')?.value||$('date').value||today();
+ const medDate=$('medRecordDate')?.value||$('date').value||today();
+ const bpHealth=data[bpDate]?.health||{};
+ const medHealth=data[medDate]?.health||{};
+ bpPeriods.forEach(p=>{
+   const h=bpHealth[p]||{};
+   $('sys_'+p).value=h.sys??''; $('dia_'+p).value=h.dia??''; $('pulse_'+p).value=h.pulse??'';
+   $('time_'+p).value=h.measureTime||'';
  });
- $('healthMsg').textContent=`目前顯示 ${date} 的三個血壓時段及兩個服藥時段。`;
+ medPeriods.forEach(p=>{
+   const h=medHealth[p]||{};
+   $('med_'+p).value=h.medStatus??''; $('medtime_'+p).value=h.medTime||'';
+ });
+ updateQueryInputLocks();
+ $('healthMsg').textContent=`目前顯示 ${bpDate} 的血壓／心跳紀錄，以及 ${medDate} 的服藥紀錄。`;
 }
-function saveHealthAutomatically(period){
+function saveHealthAutomatically(period,changedKey=''){
+ const queryDate=medPeriods.includes(period)?$('medRecordDate').value:$('bpRecordDate').value;
  const date=$('date').value||today();
+ if(queryDate!==date){$('healthMsg').textContent='目前顯示的是查詢日期；如需補登，請先將查詢日期切回補登日期。';return;}
+ const backfill=isBackfillMode();
  const old=data[date]?.health?.[period]||{};
- const h={...old};
+ const h={...old};const refused=[];
  if(bpPeriods.includes(period)){
    const sys=$('sys_'+period).value.trim(),dia=$('dia_'+period).value.trim(),pulse=$('pulse_'+period).value.trim();
-   if((sys||dia||pulse)&&!(sys&&dia&&pulse)){$('healthMsg').textContent=periodLabel(period)+'血壓請完整輸入收縮壓、舒張壓及心跳，尚未儲存。';return;}
-   if(sys&&(+sys<=0||+dia<=0||+pulse<=0)){$('healthMsg').textContent='請確認血壓及心跳數值大於 0，尚未儲存。';return;}
-   if(sys){h.sys=Number(sys);h.dia=Number(dia);h.pulse=Number(pulse);h.measureTime=h.measureTime||'';}
-   else {delete h.sys;delete h.dia;delete h.pulse;delete h.measureTime;}
+   if(!backfill&&(sys||dia||pulse)&&!(sys&&dia&&pulse)){$('healthMsg').textContent=periodLabel(period)+'血壓請完整輸入收縮壓、舒張壓及心跳，尚未儲存。';return;}
+   const vals=[['sys',sys],['dia',dia],['pulse',pulse]];
+   for(const [key,value] of vals){
+     if(backfill&&changedKey===key&&hasValue(h[key])&&!value){refused.push(({sys:'收縮壓',dia:'舒張壓',pulse:'心跳'})[key]);continue;}
+     if(!value)continue;
+     if(+value<=0||!Number.isFinite(+value)){$('healthMsg').textContent='請確認血壓及心跳數值有效且大於 0，尚未儲存。';return;}
+     if(backfill&&hasValue(h[key])){if(Number(value)!==Number(h[key]))refused.push(({sys:'收縮壓',dia:'舒張壓',pulse:'心跳'})[key]);}
+     else h[key]=Number(value);
+   }
+   if(sys||dia||pulse)h.measureTime=h.measureTime||'';
+   else if(!backfill){delete h.sys;delete h.dia;delete h.pulse;delete h.measureTime;}
  }
  if(medPeriods.includes(period)){
    const status=$('med_'+period).value;
-   if(status==='taken'){h.medStatus='taken';h.medTime=h.medTime||'';}
-   else {delete h.medStatus;delete h.medTime;}
+   if(backfill&&changedKey==='medStatus'&&hasValue(h.medStatus)&&status!==h.medStatus)refused.push('服藥狀態');
+   if(status==='taken'){ 
+     if(backfill&&hasValue(h.medStatus)){if(h.medStatus!=='taken')refused.push('服藥狀態');}
+     else h.medStatus='taken';
+     h.medTime=h.medTime||'';
+   }else if(!backfill){delete h.medStatus;delete h.medTime;}
  }
+ const hasAny=Object.keys(h).some(k=>hasValue(h[k]));
  const hasBp=!!(h.sys&&h.dia&&h.pulse),hasMed=h.medStatus==='taken';
  data[date]=data[date]||{date};data[date].health=data[date].health||{};
- if(hasBp||hasMed)data[date].health[period]=h;
+ // 補登時保留既有時段物件，即使資料尚未完整；不因空白而刪除
+ if(backfill){if(hasAny)data[date].health[period]=h;}
+ else if(hasBp||hasMed)data[date].health[period]=h;
  else delete data[date].health[period];
  if(!Object.keys(data[date].health).length)delete data[date].health;
  try{
    localStorage.setItem(KEY,JSON.stringify(data));
    const check=JSON.parse(localStorage.getItem(KEY)||'{}');
-   if((hasBp||hasMed)&&!check[date]?.health?.[period])throw Error('讀回驗證失敗');
-   if(bpPeriods.includes(period))$('time_'+period).value=h.measureTime||'';
-   if(medPeriods.includes(period))$('medtime_'+period).value=h.medTime||'';
-   render();renderHealth();$('healthMsg').textContent=periodLabel(period)+'資料已自動儲存並驗證。';
+   if(!check[date])throw Error('讀回驗證失敗');
+   if(bpPeriods.includes(period)){$('sys_'+period).value=h.sys??'';$('dia_'+period).value=h.dia??'';$('pulse_'+period).value=h.pulse??'';$('time_'+period).value=h.measureTime||'';}
+   if(medPeriods.includes(period)){$('med_'+period).value=h.medStatus??'';$('medtime_'+period).value=h.medTime||'';}
+   render();renderHealth();
+   $('healthMsg').textContent=backfill?(refused.length?refused.map(name=>name+'：該欄位已有資料不得補登。').join(' '):'')+periodLabel(period)+'補登完成；既有資料予以保留，只填入空白欄位。':periodLabel(period)+'資料已自動儲存並驗證。';
  }catch(e){$('healthMsg').textContent='本機自動儲存失敗：'+e.message;}
 }
-function scheduleHealthAutoSave(period){clearTimeout(healthAutoSaveTimer);healthAutoSaveTimer=setTimeout(()=>saveHealthAutomatically(period),700);}
-bpPeriods.forEach(p=>['sys','dia','pulse'].forEach(k=>$(''+k+'_'+p).addEventListener('input',()=>scheduleHealthAutoSave(p))));
+function scheduleHealthAutoSave(period,changedKey=''){clearTimeout(healthAutoSaveTimer);healthAutoSaveTimer=setTimeout(()=>saveHealthAutomatically(period,changedKey),700);}
+bpPeriods.forEach(p=>['sys','dia','pulse'].forEach(k=>$(''+k+'_'+p).addEventListener('input',()=>scheduleHealthAutoSave(p,k))));
 medPeriods.forEach(p=>$('med_'+p).addEventListener('change',()=>{
  const date=$('date').value||today(),h=data[date]?.health?.[p]||{};
  if($('med_'+p).value==='taken'&&!h.medTime)$('medtime_'+p).value=localClock();
  if($('med_'+p).value!=='taken')$('medtime_'+p).value='';
- scheduleHealthAutoSave(p);
+ scheduleHealthAutoSave(p,'medStatus');
 }));
 function loadHealthSlot(date,period){
- $('date').value=date;setDate(date);fillHealth();
- $('healthMsg').textContent=`已載入 ${date} 的所有時段；請直接修改對應欄位。`;
+ $('date').value=date;setDate(date);
+ ['bpRecordDate','medRecordDate'].forEach(id=>$(id).value=date);
+ fillHealth();renderHealth();
+ $('healthMsg').textContent=`已將 ${date} 設為補登日期並載入健康紀錄；可進行手動調整。`;
 }
 function editHealthRecord(date){loadHealthSlot(date,'morning');document.querySelector('#healthMsg').scrollIntoView({behavior:'smooth',block:'center'});}
 function deleteHealthRecord(date){
@@ -431,45 +599,90 @@ function deleteHealthRecord(date){
 }
 window.editHealthRecord=editHealthRecord;
 window.deleteHealthRecord=deleteHealthRecord;
+function selectedDate(id){return $(id)?.value||today();}
 function renderHealth(){
-  const rows=[];
-  const bloodPeriodFromTime=(clock,fallback)=>{
-    if(!clock || !/^\d{1,2}:\d{2}$/.test(clock)) return fallback;
-    const hour=Number(clock.split(':')[0]);
-    return hour>=5&&hour<12?'morning':hour>=12&&hour<18?'afternoon':'evening';
-  };
-  const medPeriodFromBucket=bucket=>bucket;
-  Object.keys(data).filter(date=>date===today()).sort((a,b)=>b.localeCompare(a)).forEach(date=>{
-    const health=data[date]?.health;
-    if(!health) return;
-    const slots={morning:{},afternoon:{},evening:{}}, meds={morning:{},afternoon:{},evening:{}};
-    Object.keys(health).forEach(bucket=>{
-      const h=health[bucket]||{};
-      if(h.sys||h.dia||h.pulse!==undefined&&h.pulse!==''){
-        const p=bucket;
-        if(slots[p]) Object.assign(slots[p],{sys:h.sys,dia:h.dia,pulse:h.pulse});
-      }
-      if(h.medStatus==='taken'){
-        const p=medPeriodFromBucket(bucket);
-        if(meds[p]) meds[p]={medStatus:'taken',medTime:h.medTime||''};
-      }
-    });
-    const bpText=h=>h.sys&&h.dia?esc(h.sys+'/'+h.dia):'';
-    const pulseText=h=>h.pulse!==undefined&&h.pulse!==null&&h.pulse!==''?esc(h.pulse):'';
-    const medText=(h,p)=>h.medStatus==='taken'?(periodLabel(p)+'已服用')+(h.medTime?'（'+esc(h.medTime)+'）':''):'';
-    const m=slots.morning,a=slots.afternoon,e=slots.evening;
-    rows.push(`<tr><td data-label="日期">${esc(date)}</td><td data-label="上午血壓">${bpText(m)}</td><td data-label="上午心跳">${pulseText(m)}</td><td data-label="晚上血壓">${bpText(e)}</td><td data-label="晚上心跳">${pulseText(e)}</td><td data-label="下午血壓">${bpText(a)}</td><td data-label="下午心跳">${pulseText(a)}</td><td data-label="上午服藥狀態">${medText(meds.morning,'morning')}</td><td data-label="晚上服藥狀態">${medText(meds.evening,'evening')}</td><td data-label="操作"><button class="secondary" onclick="editHealthRecord('${date}')">編輯</button> <button class="danger" onclick="deleteHealthRecord('${date}')">刪除</button></td></tr>`);
-  });
-  $('healthRecords').innerHTML=rows.join('');
+ const dateBP=selectedDate('bpRecordDate'), dateMed=selectedDate('medRecordDate');
+ const health=data[dateBP]?.health||{};
+ const bpCell=p=>{const h=health[p]||{};const bp=h.sys&&h.dia?esc(h.sys+'/'+h.dia):'—';const pulse=h.pulse!==undefined&&h.pulse!==null&&h.pulse!==''?esc(h.pulse):'—';return {bp,pulse};};
+ const m=bpCell('morning'),a=bpCell('afternoon'),e=bpCell('evening');
+ const hasBP=['morning','afternoon','evening'].some(p=>{const h=health[p]||{};return (h.sys!==undefined&&h.sys!=='')||(h.dia!==undefined&&h.dia!=='')||(h.pulse!==undefined&&h.pulse!=='');});
+ $('bpRecords').innerHTML=hasBP?`<tr><td>${esc(dateBP)}</td><td>${m.bp}</td><td>${m.pulse}</td><td>${a.bp}</td><td>${a.pulse}</td><td>${e.bp}</td><td>${e.pulse}</td><td><button class="secondary" onclick="editHealthRecord('${dateBP}')">編輯</button> <button class="danger" onclick="deleteDisplayedHealthCategory('${dateBP}','bp')">刪除血壓</button></td></tr>`:`<tr><td colspan="8">${esc(dateBP)} 尚無血壓／心跳紀錄</td></tr>`;
+ const medHealth=data[dateMed]?.health||{};
+ const medText=p=>{const h=medHealth[p]||{};return h.medStatus==='taken'?'已服用'+(h.medTime?'（'+esc(h.medTime)+'）':''):'—';};
+ const hasMed=['morning','evening'].some(p=>(medHealth[p]||{}).medStatus==='taken');
+ $('medRecords').innerHTML=hasMed?`<tr><td>${esc(dateMed)}</td><td>${medText('morning')}</td><td>${medText('evening')}</td><td><button class="secondary" onclick="editHealthRecord('${dateMed}')">編輯</button> <button class="danger" onclick="deleteDisplayedHealthCategory('${dateMed}','med')">刪除服藥</button></td></tr>`:`<tr><td colspan="4">${esc(dateMed)} 尚無服藥紀錄</td></tr>`;
 }
 
 function render(){
- let arr=Object.values(data).filter(r=>r.date===today()).sort((a,b)=>b.date.localeCompare(a.date));
- $('records').innerHTML=arr.map(r=>`<tr><td data-label="日期">${esc(r.date)}</td><td data-label="星期">星期${dayName(r.date)}</td><td data-label="早餐後">${r.breakfast?'✓':''}</td><td data-label="午餐後">${r.lunch?'✓':''}</td><td data-label="晚餐後">${r.dinner?'✓':''}</td><td data-label="伏地挺身">${esc(r.pushups)}</td><td data-label="跑步">${esc(r.run)}</td><td data-label="爬樓梯">${esc(r.stairs)}</td><td data-label="深蹲">${esc(r.squat)}</td><td data-label="伸展">${esc(r.stretch)}</td><td data-label="吊單槓">${esc(r.hang)}</td><td data-label="凱格爾">${esc(r.kegel)}</td><td data-label="操作"><button class="secondary" onclick="editRow('${r.date}')">編輯</button> <button class="danger" onclick="deleteRow('${r.date}')">刪除</button></td></tr>`).join('');
+ let queryDate=selectedDate('exerciseRecordDate'); let arr=Object.values(data).filter(r=>r.date===queryDate && fields.some(f=>f==='breakfast'||f==='lunch'||f==='dinner'?!!r[f]:String(r[f]??'').trim()!=='' )).sort((a,b)=>b.date.localeCompare(a.date));
+ $('records').innerHTML=arr.length?arr.map(r=>`<tr><td data-label="日期">${esc(r.date)}</td><td data-label="星期">星期${dayName(r.date)}</td><td data-label="早餐後">${r.breakfast?'✓':''}</td><td data-label="午餐後">${r.lunch?'✓':''}</td><td data-label="晚餐後">${r.dinner?'✓':''}</td><td data-label="伏地挺身">${esc(r.pushups)}</td><td data-label="跑步">${esc(r.run)}</td><td data-label="爬樓梯">${esc(r.stairs)}</td><td data-label="深蹲">${esc(r.squat)}</td><td data-label="伸展">${esc(r.stretch)}</td><td data-label="吊單槓">${esc(r.hang)}</td><td data-label="凱格爾">${esc(r.kegel)}</td><td data-label="操作"><button class="secondary" onclick="editRow('${r.date}')">編輯</button> <button class="danger" onclick="deleteRow('${r.date}')">刪除</button></td></tr>`).join(''):'<tr><td colspan="13">尚無運動記錄</td></tr>';
  $('days').textContent=arr.length;
 }
-window.editRow=d=>{setDate(d);fill(data[d]);window.scrollTo({top:0,behavior:'smooth'})};
-window.deleteRow=d=>{if(confirm('確定刪除 '+d+' 的紀錄？')){delete data[d];persist()}};
+$('exerciseRecordDate').addEventListener('change',()=>{
+ clearTimeout(exerciseAutoSaveTimer);pendingExerciseFields.clear();
+ loadExerciseQuery();render();
+});
+$('bpRecordDate').addEventListener('change',()=>{
+ clearTimeout(healthAutoSaveTimer);
+ fillHealth();renderHealth();
+});
+$('medRecordDate').addEventListener('change',()=>{
+ clearTimeout(healthAutoSaveTimer);
+ fillHealth();renderHealth();
+});
+window.deleteDisplayedHealthCategory=(date,category)=>{
+ const label=category==='bp'?'血壓／心跳':'服藥';
+ if(!confirm(`確定完整刪除 ${date} 的${label}紀錄？同一天其他類別會保留。`))return;
+ clearTimeout(healthAutoSaveTimer);
+ const rec=data[date];
+ if(rec?.health){
+   const periods=category==='bp'?bpPeriods:medPeriods;
+   periods.forEach(p=>{
+     const h=rec.health[p];
+     if(!h)return;
+     if(category==='bp'){delete h.sys;delete h.dia;delete h.pulse;delete h.measureTime;}
+     else{delete h.medStatus;delete h.medTime;}
+     if(!Object.keys(h).length)delete rec.health[p];
+   });
+   if(!Object.keys(rec.health).length)delete rec.health;
+   if(!Object.keys(rec).some(k=>k!=='date'))delete data[date];
+ }
+ try{
+   const serialized=JSON.stringify(data);
+   localStorage.setItem(KEY,serialized);
+   const verified=JSON.parse(localStorage.getItem(KEY)||'{}');
+   if(JSON.stringify(verified)!==serialized)throw new Error('刪除後讀回驗證不一致');
+   data=verified;
+   fillHealth();renderHealth();render();
+   $('healthMsg').textContent=`${date} 的${label}紀錄已完整刪除並驗證；同日其他類別保留。`;
+ }catch(e){$('healthMsg').textContent='刪除失敗：'+e.message;}
+};
+
+window.editRow=d=>{
+ setDate(d);
+ ['exerciseRecordDate','bpRecordDate','medRecordDate'].forEach(id=>$(id).value=d);
+ loadExerciseQuery();fillHealth();render();renderHealth();
+ window.scrollTo({top:0,behavior:'smooth'});
+};
+window.deleteRow=d=>{
+ if(!confirm('確定完整刪除 '+d+' 的運動紀錄？同一天血壓／心跳及服藥紀錄會保留。'))return;
+ clearTimeout(exerciseAutoSaveTimer);pendingExerciseFields.clear();
+ const rec=data[d];
+ if(rec){
+   fields.forEach(f=>delete rec[f]);
+   if(!rec.health)delete data[d];
+ }
+ try{
+   const serialized=JSON.stringify(data);
+   localStorage.setItem(KEY,serialized);
+   const verified=JSON.parse(localStorage.getItem(KEY)||'{}');
+   if(JSON.stringify(verified)!==serialized)throw new Error('刪除後讀回驗證不一致');
+   data=verified;
+   if($('exerciseRecordDate').value===d)fill(data[d]||{});
+   updateQueryInputLocks();render();renderHealth();
+   $('saveMsg').textContent=`${d} 的運動紀錄已完整刪除並驗證；同日血壓／心跳及服藥紀錄保留。`;
+ }catch(e){$('saveMsg').textContent='刪除失敗：'+e.message;}
+};
 function download(name,content,type){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 function csvDownload(filename,columns,rows){
  const csv='\ufeff'+[columns,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
@@ -579,7 +792,7 @@ $('import').onchange=async e=>{
     alert('匯入未完成：'+(err.message||'檔案格式錯誤')+'。原有資料未主動清除。');
   }finally{e.target.value='';}
 };
-setDate(today());fill(data[today()]||{});render();
+setDate(today());['exerciseRecordDate','bpRecordDate','medRecordDate'].forEach(id=>{if($(id))$(id).value=today();});loadExerciseQuery();render();
 if(!storageReady){$('parseMsg').textContent='警告：目前開啟方式無法使用本機儲存，請改用瀏覽器正常網址頁面；目前不會宣稱已保存。'}
 refreshHealthClock();fillHealth();renderHealth();
 
